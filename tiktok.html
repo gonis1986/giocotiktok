@@ -1230,17 +1230,41 @@
             return true;
         }
 
-        // Mostra il banner celebrazione in cima all'arena
-        function showCelebrationBanner(title, sub, avatar, isSuper = false) {
+        // Mostra il banner celebrazione in cima all'arena.
+        // Le celebrazioni sono in coda: senza questo un regalo Jackpot che
+        // completa anche l'obiettivo vedrebbe "JACKPOT SUPREMO" sovrascritto
+        // all'istante da "OBIETTIVO RAGGIUNTO", e sotto supernova la meteora
+        // incoronerebbe il Re in ~1s nascondendo i banner dei livelli regalo.
+        const celebrationQueue = [];
+        let celebrationShowing = false;
+
+        function showCelebrationBanner(title, sub, avatar, isSuper = false, holdMs = 3400) {
+            celebrationQueue.push({ title, sub, avatar, isSuper, holdMs });
+            pumpCelebrationQueue();
+        }
+
+        function pumpCelebrationQueue() {
+            if (celebrationShowing || celebrationQueue.length === 0) return;
+            celebrationShowing = true;
+            const item = celebrationQueue.shift();
+
             const banner = document.getElementById('celebrationBanner');
-            document.getElementById('celTitle').textContent = title;
-            document.getElementById('celSub').textContent = sub;
-            if (avatar) {
-                document.getElementById('celAvatar').src = avatar;
+            document.getElementById('celTitle').textContent = item.title;
+            document.getElementById('celSub').textContent = item.sub;
+            if (item.avatar) {
+                document.getElementById('celAvatar').src = item.avatar;
             }
-            banner.classList.toggle('supernova', isSuper);
+            banner.classList.toggle('supernova', item.isSuper);
             banner.classList.add('active');
-            setTimeout(() => banner.classList.remove('active'), 3800);
+
+            setTimeout(() => {
+                banner.classList.remove('active');
+                // Breve respiro tra una celebrazione e la successiva
+                setTimeout(() => {
+                    celebrationShowing = false;
+                    pumpCelebrationQueue();
+                }, 450);
+            }, item.holdMs);
         }
 
         function updateChaosUI() {
@@ -2175,7 +2199,8 @@
                 '🎉 OBIETTIVO RAGGIUNTO!',
                 `${goalTarget} diamanti raccolti — JACKPOT per tutta l'Arena!`,
                 '',
-                true
+                true,
+                4200
             );
             isSpeakingAnnouncement = true;
             speakVoiceWithLang(
