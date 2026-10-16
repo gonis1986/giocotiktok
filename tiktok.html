@@ -1168,43 +1168,194 @@
             } catch (e) {}
         }
 
-        // BGM Procedurale Leggero & Dinamico (Modula il filtro in base al Caos)
+        // BGM Procedurale Festivo (groove a loop: cassa, charleston, basso,
+        // arpeggio) — modula il filtro in base al Caos e si abbassa da solo
+        // mentre la voce parla (ducking), così la voce resta protagonista.
+        const BGM_BASE_VOL = 0.05;
+        const BGM_DUCK_VOL = 0.012;
+        const BGM_BPM = 118;
+        let bgmStepIdx = 0;
+        let bgmNoiseBuffer = null;
+
+        function getBgmNoiseBuffer() {
+            if (!bgmNoiseBuffer) {
+                bgmNoiseBuffer = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 0.4), audioCtx.sampleRate);
+                const d = bgmNoiseBuffer.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            }
+            return bgmNoiseBuffer;
+        }
+
         function initProceduralBgm() {
             try {
                 if (!audioCtx || !masterGain) return;
+                // Bus volume BGM (è la manopola del ducking): bgmGain -> masterGain
                 bgmGain = audioCtx.createGain();
-                bgmGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                bgmGain.gain.setValueAtTime(BGM_BASE_VOL, audioCtx.currentTime);
+                bgmGain.connect(masterGain);
 
+                // Le parti melodiche passano dal filtro del Caos prima del bus
                 bgmFilter = audioCtx.createBiquadFilter();
                 bgmFilter.type = 'lowpass';
-                bgmFilter.frequency.setValueAtTime(450, audioCtx.currentTime); // Inizia caldo e morbido
+                bgmFilter.frequency.setValueAtTime(650, audioCtx.currentTime);
+                bgmFilter.connect(bgmGain);
 
-                bgmGain.connect(bgmFilter);
-                bgmFilter.connect(masterGain);
-
-                // Drone armonico continuo bifonico
+                // Drone caldo di fondo (riempie i vuoti del groove)
                 const oscRoot = audioCtx.createOscillator();
                 oscRoot.type = 'triangle';
                 oscRoot.frequency.setValueAtTime(65.41, audioCtx.currentTime); // C2
-
-                const oscFifth = audioCtx.createOscillator();
-                oscFifth.type = 'sine';
-                oscFifth.frequency.setValueAtTime(98.00, audioCtx.currentTime); // G2
-
-                oscRoot.connect(bgmGain);
-                oscFifth.connect(bgmGain);
-
+                const droneGain = audioCtx.createGain();
+                droneGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                oscRoot.connect(droneGain);
+                droneGain.connect(bgmFilter);
                 oscRoot.start();
-                oscFifth.start();
+
+                // Sequencer a 8 ottavi per battuta, progressione I - vi - IV - V
+                const stepMs = (60 / BGM_BPM / 2) * 1000;
+                setInterval(bgmStep, stepMs);
             } catch (e) {}
+        }
+
+        const BGM_ROOTS = [130.81, 110.00, 87.31, 98.00]; // C3, A2, F2, G2
+
+        function bgmStep() {
+            try {
+                if (isAudioMuted || !audioCtx || audioCtx.state !== 'running') { bgmStepIdx++; return; }
+                const now = audioCtx.currentTime;
+                const bar = Math.floor(bgmStepIdx / 8) % BGM_ROOTS.length;
+                const step = bgmStepIdx % 8;
+                const root = BGM_ROOTS[bar];
+
+                if (step % 4 === 0) bgmKick(now);            // cassa sui quarti
+                if (step % 2 === 1) bgmHat(now);             // charleston sui contro-tempi
+                bgmBass(now, root * (step === 7 ? 2 : 1));   // basso a ottavi
+                if (step === 2 || step === 6) {              // arpeggio festoso
+                    const arpMult = [4, 5, 6][(bar + step) % 3];
+                    bgmPluck(now, root * arpMult);
+                }
+                bgmStepIdx++;
+            } catch (e) { bgmStepIdx++; }
+        }
+
+        function bgmKick(t) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(140, t);
+            osc.frequency.exponentialRampToValueAtTime(44, t + 0.09);
+            g.gain.setValueAtTime(1.6, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+            osc.connect(g); g.connect(bgmGain);
+            osc.start(t); osc.stop(t + 0.13);
+        }
+
+        function bgmHat(t) {
+            const src = audioCtx.createBufferSource();
+            src.buffer = getBgmNoiseBuffer();
+            const hp = audioCtx.createBiquadFilter();
+            hp.type = 'highpass';
+            hp.frequency.setValueAtTime(6500, t);
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(0.35, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+            src.connect(hp); hp.connect(g); g.connect(bgmGain);
+            src.start(t); src.stop(t + 0.06);
+        }
+
+        function bgmBass(t, freq) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, t);
+            g.gain.setValueAtTime(0.5, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            osc.connect(g); g.connect(bgmFilter);
+            osc.start(t); osc.stop(t + 0.22);
+        }
+
+        function bgmPluck(t, freq) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t);
+            g.gain.setValueAtTime(0.55, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+            osc.connect(g); g.connect(bgmFilter);
+            osc.start(t); osc.stop(t + 0.32);
         }
 
         function updateProceduralBgmChaos(chaosVal) {
             if (!bgmFilter || !audioCtx) return;
             try {
-                // Calma (0%): 450Hz -> Overdrive (100%): 3800Hz
-                const targetFreq = 450 + (chaosVal / 100) * 3350;
+                // Calma (0%): 650Hz -> Overdrive (100%): 3800Hz
+                const targetFreq = 650 + (chaosVal / 100) * 3150;
                 bgmFilter.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.2);
+            } catch (e) {}
+        }
+
+        // Ducking: la musica si abbassa mentre la voce parla
+        function duckBgm(down) {
+            if (!bgmGain || !audioCtx) return;
+            try {
+                bgmGain.gain.setTargetAtTime(down ? BGM_DUCK_VOL : BGM_BASE_VOL, audioCtx.currentTime, 0.25);
+            } catch (e) {}
+        }
+
+        // Jingle del Vincitore: fanfara da quiz televisivo dedicata a chi
+        // viene incoronato Re/Regina della Live — è il SUO momento.
+        function playWinnerJingle() {
+            try {
+                if (isAudioMuted) return;
+                initAudio();
+                if (!audioCtx || !masterGain) return;
+                const now = audioCtx.currentTime;
+
+                // Salita trionfale Do-Mi-Sol-Do + risposta + acuto finale
+                const seq = [
+                    { f: 523.25, t: 0.00, d: 0.14 }, { f: 659.25, t: 0.13, d: 0.14 },
+                    { f: 783.99, t: 0.26, d: 0.14 }, { f: 1046.50, t: 0.39, d: 0.30 },
+                    { f: 783.99, t: 0.72, d: 0.10 }, { f: 1046.50, t: 0.84, d: 0.10 },
+                    { f: 1318.51, t: 0.98, d: 0.60 }
+                ];
+                seq.forEach(n => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    const filter = audioCtx.createBiquadFilter();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(n.f, now + n.t);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(2800, now + n.t);
+                    gain.gain.setValueAtTime(0.11, now + n.t);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d);
+                    osc.connect(filter); filter.connect(gain); gain.connect(masterGain);
+                    osc.start(now + n.t); osc.stop(now + n.t + n.d + 0.02);
+
+                    // Scintilla un'ottava sopra
+                    const sp = audioCtx.createOscillator();
+                    const sg = audioCtx.createGain();
+                    sp.type = 'sine';
+                    sp.frequency.setValueAtTime(n.f * 2, now + n.t);
+                    sg.gain.setValueAtTime(0.03, now + n.t);
+                    sg.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d);
+                    sp.connect(sg); sg.connect(masterGain);
+                    sp.start(now + n.t); sp.stop(now + n.t + n.d + 0.02);
+                });
+
+                // Accordone finale MAESTOSO (Do5-Mi5-Sol5-Do6)
+                [523.25, 659.25, 783.99, 1046.50].forEach(f => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    const filter = audioCtx.createBiquadFilter();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + 1.55);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(2400, now + 1.55);
+                    gain.gain.setValueAtTime(0.075, now + 1.55);
+                    gain.gain.setValueAtTime(0.075, now + 2.15);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
+                    osc.connect(filter); filter.connect(gain); gain.connect(masterGain);
+                    osc.start(now + 1.55); osc.stop(now + 2.85);
+                });
             } catch (e) {}
         }
 
@@ -1257,6 +1408,20 @@
             });
         }
 
+        // Sceglie la voce più naturale disponibile: le voci cloud
+        // (Google/Microsoft Neural/Online) suonano molto più umane di quelle
+        // robotiche locali di default.
+        function pickNaturalVoice(langCode) {
+            const voices = window.speechSynthesis.getVoices();
+            const lang = langCode.slice(0, 2);
+            const candidates = voices.filter(v =>
+                v.lang.replace('_', '-').toLowerCase().startsWith(lang));
+            if (!candidates.length) return null;
+            return candidates.find(v => /google|natural|online|neural|premium/i.test(v.name))
+                || candidates.find(v => v.localService === false)
+                || candidates[0];
+        }
+
         function speakVoiceWithLang(text, langCode, onComplete = null) {
             try {
                 if (!('speechSynthesis' in window)) {
@@ -1266,15 +1431,24 @@
                 window.speechSynthesis.cancel();
                 const utter = new SpeechSynthesisUtterance(text);
                 utter.lang = langCode;
-                utter.rate = 1.05;
-                utter.volume = isAudioMuted ? 0 : 0.65;
+                // Ritmo leggermente sostenuto e intonazione calda = più umano
+                utter.rate = 0.97;
+                utter.pitch = 1.03;
+                utter.volume = isAudioMuted ? 0 : 0.75;
 
-                const voices = window.speechSynthesis.getVoices();
-                const matchedVoice = voices.find(v => v.lang.startsWith(langCode.slice(0, 2)));
-                if (matchedVoice) utter.voice = matchedVoice;
+                const voice = pickNaturalVoice(langCode);
+                if (voice) utter.voice = voice;
 
-                utter.onend = () => { if (onComplete) onComplete(); };
-                utter.onerror = () => { if (onComplete) onComplete(); };
+                // La musica si abbassa per lasciare la scena alla voce
+                duckBgm(true);
+                const unduck = () => {
+                    if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+                        duckBgm(false);
+                    }
+                    if (onComplete) onComplete();
+                };
+                utter.onend = unduck;
+                utter.onerror = unduck;
                 window.speechSynthesis.speak(utter);
             } catch (e) {
                 if (onComplete) onComplete();
@@ -1293,6 +1467,21 @@
                 text = `Incredibile! ${cleanUser} ha donato ${giftName}! Il Trono del Reattore è suo!`;
             }
             speakVoiceWithLang(text, 'it-IT', () => {
+                isSpeakingAnnouncement = false;
+            });
+        }
+
+        // Saluto vocale a chi entra in live. Strozzato a 1 saluto ogni 12s e
+        // mai sopra un annuncio regalo: in una live piena entrano decine di
+        // persone al secondo e la voce non può inseguirle tutte.
+        let lastGreetAt = 0;
+        function greetJoiner(user) {
+            if (isSpeakingAnnouncement) return;
+            const now = Date.now();
+            if (now - lastGreetAt < 12000) return;
+            lastGreetAt = now;
+            isSpeakingAnnouncement = true;
+            speakVoiceWithLang(`Benvenuto in live, ${decodeEntities(user)}!`, 'it-IT', () => {
                 isSpeakingAnnouncement = false;
             });
         }
@@ -1962,7 +2151,7 @@
             reignCounts[user] = (reignCounts[user] || 0) + 1;
             const reign = reignCounts[user];
 
-            playRoseFanfareDopamine();
+            playWinnerJingle();
             spawnImpactParticles(reactorThrone.x, reactorThrone.y, '#facc15', 50);
 
             if (reign > 1) {
@@ -2661,6 +2850,7 @@
                 addScore(u, 10);
                 addFeedLine("👋", feedName, "entra nell'Arena!");
                 playPopSound(320);
+                greetJoiner(u);
 
             } else if (ev.type === "follow") {
                 if (canSpawnFor(u, 15000)) {
