@@ -1,0 +1,17 @@
+# File di configurazione ed ambienti
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Log e cache
+*.log
+tiktok_data/
+*.json

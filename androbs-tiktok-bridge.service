@@ -1,0 +1,17 @@
+[Unit]
+Description=AndrObs TikTok LIVE Real-Time Event Bridge Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/androbs-tiktok-bridge
+EnvironmentFile=-/opt/androbs-tiktok-bridge/.env
+ExecStart=/opt/androbs-tiktok-bridge/venv/bin/python3 /opt/androbs-tiktok-bridge/bridge.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

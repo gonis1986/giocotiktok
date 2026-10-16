@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
+    <title>AndrObs • Quantum Pinball Reactor (Chaos Engine 60 FPS)</title>
+    <meta name="description" content="AndrObs Studio TikTok LIVE Interactive 2D Physics Arena - 100% Real-Time Canvas HD 60 FPS">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800;900&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg-deep: #030712;
+            --cyan-glow: #06b6d4;
+            --purple-glow: #a855f7;
+            --rose-glow: #fe2c55;
+            --gold-glow: #facc15;
+            --gold-bright: #fef08a;
+            --neon-border: rgba(6, 182, 212, 0.45);
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #02040a;
+            color: #ffffff;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* SFONDO DINAMICO MESH RETICOLO CYBERNETICO */
+        .bg-mesh {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 50% 20%, rgba(6, 182, 212, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 20% 75%, rgba(168, 85, 247, 0.16) 0%, transparent 50%),
+                radial-gradient(circle at 80% 85%, rgba(254, 44, 85, 0.14) 0%, transparent 50%),
+                linear-gradient(180deg, #02040a 0%, #050b18 50%, #02040a 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* SCANLINE SOFFUSA VINTAGE ARCADE */
+        .scanlines {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* CONTAINER MASTER NATIVO 9:16 (1080 x 1920) CON SUPPORTO SCALING FIT */
+        #stage-wrapper {
+            position: relative;
+            width: 1080px;
+            height: 1920px;
+            transform-origin: center center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        #stage {
+            position: relative;
+            width: 1080px;
+            height: 1920px;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px 14px 20px;
+            gap: 10px;
+            background: #030712;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            border-left: 2px solid rgba(255, 255, 255, 0.08);
+            border-right: 2px solid rgba(255, 255, 255, 0.08);
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        #stage.shake-active {
+            animation: stage-shake 0.12s infinite;
+        }
+
+        #stage.gold-flash {
+            box-shadow: 0 0 100px rgba(250, 204, 21, 0.8), inset 0 0 40px rgba(250, 204, 21, 0.6);
+            border-color: #facc15;
+        }
+
+        #stage.supernova-glow {
+            box-shadow: 0 0 120px rgba(254, 44, 85, 0.9), inset 0 0 60px rgba(254, 44, 85, 0.5);
+            border-color: #fe2c55;
+        }
+
+        @keyframes stage-shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-4px, 4px) rotate(-0.3deg); }
+            40% { transform: translate(4px, -3px) rotate(0.3deg); }
+            60% { transform: translate(-5px, -2px) rotate(-0.2deg); }
+            80% { transform: translate(3px, 5px) rotate(0.2deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        /* 1. HEADER (68px) - SAFE ZONE ALTA */
+        .header-bar {
+            height: 68px;
+            min-height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.16);
+            border-radius: 18px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+            z-index: 20;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-badge {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #06b6d4, #a855f7);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 26px;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .logo-text h1 {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #ffffff 30%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        .logo-text p {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+        }
+
+        .header-center-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .active-players-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.18);
+            border: 1.5px solid #10b981;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #34d399;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .target-streamer-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(6, 182, 212, 0.22);
+            border: 2px solid #06b6d4;
+            padding: 6px 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 900;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .target-streamer-pill:hover {
+            background: rgba(6, 182, 212, 0.45);
+            transform: scale(1.03);
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.5);
+        }
+
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.25);
+            border: 2px solid #ef4444;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #ef4444;
+            box-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
+        }
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse-live 1.2s infinite;
+        }
+        @keyframes pulse-live {
+            0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 12px #ef4444; }
+            50% { transform: scale(1.4); opacity: 0.5; box-shadow: 0 0 4px #ef4444; }
+        }
+
+        /* 2. MEGA-BANNER MARQUEE NEON (44px) */
+        .promo-marquee {
+            height: 44px;
+            min-height: 44px;
+            background: linear-gradient(90deg, #06b6d4, #a855f7, #fe2c55, #facc15, #06b6d4);
+            background-size: 300% 100%;
+            animation: gradient-shift 10s ease infinite;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 0 24px rgba(6, 182, 212, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            z-index: 18;
+        }
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .marquee-inner {
+            display: flex;
+            white-space: nowrap;
+            animation: marquee 22s linear infinite;
+            font-weight: 900;
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: #ffffff;
+            gap: 40px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* 3. BARRA CAOS E HUD REGOLE (66px) */
+        .chaos-hud-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 18;
+        }
+
+        .chaos-meter-container {
+            height: 38px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            padding: 3px 6px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+        }
+
+        .chaos-meter-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 30%, #a855f7 60%, #facc15 85%, #ef4444 100%);
+            border-radius: 9px;
+            transition: width 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+        }
+
+        .chaos-meter-fill.overdrive {
+            background: linear-gradient(90deg, #facc15 0%, #ef4444 50%, #fef08a 100%);
+            animation: overdrive-pulse 0.4s infinite alternate;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.9);
+        }
+
+        @keyframes overdrive-pulse {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.4); }
+        }
+
+        .chaos-meter-label {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chaos-state-badge {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .rules-bar {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 15, 30, 0.88);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 0 16px;
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #cbd5e1;
+        }
+        .rules-bar span.rose {
+            color: #facc15;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.8);
+        }
+        .rules-bar span.highlight {
+            color: #38bdf8;
+            font-weight: 900;
+        }
+
+        /* 4. ARENA CANVAS HD 60 FPS (~1380px DI ALTEZZA / >72% SCHERMO) */
+        .arena-zone {
+            position: relative;
+            width: 100%;
+            height: 1380px;
+            min-height: 1380px;
+            border-radius: 22px;
+            border: 2px solid rgba(6, 182, 212, 0.5);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.25);
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #0a1128 0%, #030712 95%);
+            z-index: 10;
+        }
+
+        #physicsCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* CARD SUBTITLES PROMO MULTILINGUA FLUTTUANTE (TTS SPONSOR) */
+        #promoSubtitleCard {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-60px);
+            opacity: 0;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #38bdf8;
+            border-radius: 16px;
+            padding: 10px 22px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 8px 32px rgba(6, 182, 212, 0.6);
+            z-index: 45;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+        }
+        #promoSubtitleCard.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .promo-flag {
+            font-size: 32px;
+            line-height: 1;
+        }
+        .promo-text-wrap {
+            display: flex;
+            flex-direction: column;
+        }
+        .promo-sponsor-tag {
+            font-size: 12px;
+            font-weight: 900;
+            color: #38bdf8;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .promo-content-text {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.25;
+        }
+
+        /* CELEBRAZIONE ROSE & SUPER GIFT (OVERLAY ADRENALINICO) */
+        #celebrationBanner {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-40px) scale(0.9);
+            opacity: 0;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.98), rgba(220, 38, 38, 0.98));
+            border: 3px solid #fef08a;
+            border-radius: 18px;
+            padding: 12px 30px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(250, 204, 21, 0.9);
+            z-index: 50;
+            pointer-events: none;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        #celebrationBanner.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+        #celebrationBanner.supernova {
+            background: linear-gradient(135deg, #fe2c55, #a855f7, #facc15);
+            border-color: #ffffff;
+            box-shadow: 0 0 80px rgba(254, 44, 85, 1);
+        }
+        .cel-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            object-fit: cover;
+            box-shadow: 0 0 16px rgba(0,0,0,0.5);
+        }
+        .cel-text-box h2 {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffffff;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .cel-text-box p {
+            font-size: 19px;
+            font-weight: 800;
+            color: #fef08a;
+            white-space: nowrap;
+        }
+
+        /* 5. FOOTER SAFE ZONE CHAT TIKTOK (~310px) CON LEADERBOARD E FEED */
+        .bottom-suite {
+            height: 310px;
+            min-height: 310px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 18;
+        }
+
+        .arena-footer-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .leaderboard-card {
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid rgba(234, 179, 8, 0.5);
+            border-radius: 16px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .lb-title {
+            font-size: 17px;
+            font-weight: 900;
+            color: #facc15;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+            padding-bottom: 4px;
+        }
+        .lb-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .lb-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 17px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 3px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .lb-row.gold { 
+            color: #fef08a; 
+            font-weight: 900; 
+            background: rgba(234, 179, 8, 0.15);
+            border: 1px solid rgba(234, 179, 8, 0.4);
+        }
+        .lb-row.silver { color: #e2e8f0; }
+        .lb-row.bronze { color: #fdba74; }
+
+        .feed-card {
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+        .feed-title {
+            font-size: 17px;
+            font-weight: 900;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            padding-bottom: 4px;
+        }
+        .feed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .feed-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 16.5px;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border-left: 3px solid #38bdf8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .feed-line.rose-line {
+            border-left-color: #facc15;
+            background: rgba(250, 204, 21, 0.12);
+        }
+
+        /* STATUS BAR SOTTILE CON TELEMETRIA (42px) */
+        .bottom-status-bar {
+            height: 42px;
+            background: rgba(10, 15, 30, 0.94);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 800;
+            color: #94a3b8;
+        }
+        .status-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-label {
+            font-size: 11px;
+            color: #64748b;
+            letter-spacing: 1px;
+        }
+        .status-val.clock { color: #38bdf8; }
+        .status-val.bitrate { color: #a855f7; }
+        .status-val.fps { color: #10b981; }
+        .status-val.bridge { color: #22c55e; display: flex; align-items: center; gap: 4px; }
+
+        .audio-toggle-btn {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1.5px solid #38bdf8;
+            color: #ffffff;
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .audio-toggle-btn:hover {
+            background: rgba(56, 189, 248, 0.35);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="scanlines"></div>
+
+    <div id="stage-wrapper">
+        <div id="stage">
+            <!-- 1. HEADER (68px) -->
+            <header class="header-bar">
+                <div class="logo-wrap">
+                    <div class="logo-badge">⚡</div>
+                    <div class="logo-text">
+                        <h1>AndrObs Studio</h1>
+                        <p>Quantum Pinball Reactor • 60 FPS</p>
+                    </div>
+                </div>
+
+                <div class="header-center-info">
+                    <div class="active-players-pill">
+                        <span>●</span> <span id="activeBallsCount">0 SFÉRE ATTIVE</span>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="target-streamer-pill" onclick="promptChangeTikTokUser()" title="Clicca per cambiare streamer monitorato">
+                        <span>🎯</span> <span id="targetUserSpan">@androbs_official</span>
+                    </div>
+                    <div class="live-pill">
+                        <div class="live-dot"></div>
+                        <span>LIVE</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 2. MEGA-BANNER MARQUEE NEON (44px) -->
+            <div class="promo-marquee">
+                <div class="marquee-inner">
+                    <span>🌐 WWW.ANDROBS.COM</span>
+                    <span>📱 USA LO SMARTPHONE COME WEBCAM 4K 60FPS SU OBS</span>
+                    <span>🎙️ TRADUZIONE VOCALE AI IN TEMPO REALE SENZA LAG</span>
+                    <span>🚀 SCARICA ORA L'APP SU ANDROBS.COM</span>
+                    <span>👑 DONA 1 ROSA PER RUBARE IL TRONO DEL REATTORE!</span>
+                    <span>🌐 WWW.ANDROBS.COM</span>
+                    <span>📱 USA LO SMARTPHONE COME WEBCAM 4K 60FPS SU OBS</span>
+                    <span>🎙️ TRADUZIONE VOCALE AI IN TEMPO REALE SENZA LAG</span>
+                    <span>🚀 SCARICA ORA L'APP SU ANDROBS.COM</span>
+                    <span>👑 DONA 1 ROSA PER RUBARE IL TRONO DEL REATTORE!</span>
+                </div>
+            </div>
+
+            <!-- 3. BARRA TERMOMETRO DEL CAOS & HUD REGOLE (66px) -->
+            <div class="chaos-hud-zone">
+                <div class="chaos-meter-container">
+                    <div class="chaos-meter-fill" id="chaosFill"></div>
+                    <div class="chaos-meter-label">
+                        <span>🔥 LIVELLO CAOS REATTORE</span>
+                        <span class="chaos-state-badge" id="chaosTextVal">0% (CALMA)</span>
+                    </div>
+                </div>
+                <div class="rules-bar">
+                    <span>❤️ <b class="highlight">Like</b> = Sfera Attacco (+4%)</span>
+                    <span>💬 <b class="highlight">Chat</b> = Sfera Turbo x2 (+4%)</span>
+                    <span>🌹 <b class="rose">1 Rosa</b> = METEORA DORATA + RUBA TRONO! (+40%)</span>
+                    <span>🌪️ <b class="highlight">80%+</b> = SUPERNOVA VORTEX</span>
+                </div>
+            </div>
+
+            <!-- 4. ARENA CANVAS HD 60 FPS (1380px) -->
+            <div class="arena-zone" id="arenaContainer">
+                <canvas id="physicsCanvas"></canvas>
+
+                <!-- CARD SUBTITLES PROMO MULTILINGUA (4 LINGUE) -->
+                <div id="promoSubtitleCard">
+                    <div class="promo-flag" id="promoFlag">🇮🇹</div>
+                    <div class="promo-text-wrap">
+                        <span class="promo-sponsor-tag">Sponsor Ufficiale AndrObs.com</span>
+                        <span class="promo-content-text" id="promoContentText">Trasforma il tuo telefono in una webcam 4K e traduci la tua voce in tempo reale!</span>
+                    </div>
+                </div>
+
+                <!-- OVERLAY CELEBRAZIONE ROSA / SUPER GIFT -->
+                <div id="celebrationBanner">
+                    <img id="celAvatar" class="cel-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='%23facc15'/><text x='32' y='42' font-size='32' text-anchor='middle' fill='%23000'>👑</text></svg>" alt="King Avatar">
+                    <div class="cel-text-box">
+                        <h2 id="celTitle">🌹 1 ROSA = METEORA DORATA!</h2>
+                        <p id="celSub">@Giocatore conquista il Trono del Reattore!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. FOOTER SAFE ZONE PER CHAT TIKTOK (310px) -->
+            <footer class="bottom-suite">
+                <div class="arena-footer-grid">
+                    <!-- LEADERBOARD TOP 5 -->
+                    <div class="leaderboard-card">
+                        <div class="lb-title">
+                            <span>👑 CLASSIFICA REATTORE</span>
+                            <span style="font-size: 13px; color: #94a3b8;">TOP 5</span>
+                        </div>
+                        <div class="lb-list" id="leaderboardList">
+                            <div class="lb-row gold"><span>🥇 @AndrObs_King</span><span>25,400 pt</span></div>
+                            <div class="lb-row silver"><span>🥈 @StreamerPro</span><span>18,200 pt</span></div>
+                            <div class="lb-row bronze"><span>🥉 @QuantumPilot</span><span>12,850 pt</span></div>
+                            <div class="lb-row"><span>4. @NeonRider</span><span>9,400 pt</span></div>
+                            <div class="lb-row"><span>5. @CyberGamer</span><span>7,150 pt</span></div>
+                        </div>
+                    </div>
+
+                    <!-- FEED EVENTI REAL-TIME -->
+                    <div class="feed-card">
+                        <div class="feed-title">
+                            <span>⚡ FEED EVENTI LIVE</span>
+                            <span style="font-size: 13px; color: #34d399;">● REALTIME</span>
+                        </div>
+                        <div class="feed-list" id="arenaFeed">
+                            <div class="feed-line rose-line"><span>🌹 <b>@Marco_Streamer</b> dona 1 Rosa! Trono Espugnato!</span><span style="color:#facc15;">Ora</span></div>
+                            <div class="feed-line"><span>💬 <b>@Alessia_Tech</b> lancia 2 Biglie Turbo!</span><span style="color:#64748b;">3s</span></div>
+                            <div class="feed-line"><span>❤️ <b>@Luca_FPS</b> scatena sfera d'assalto!</span><span style="color:#64748b;">7s</span></div>
+                            <div class="feed-line"><span>👋 <b>@Elena_Creator</b> entra nel Reattore!</span><span style="color:#64748b;">11s</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TELEMETRIA STATUS BAR -->
+                <div class="bottom-status-bar">
+                    <div class="status-cell">
+                        <span class="status-label">CLOCK</span>
+                        <span class="status-val clock" id="clockVal">00:00:00.000</span>
+                    </div>
+                    <div class="status-cell">
+                        <span class="status-label">ENGINE</span>
+                        <span class="status-val fps" id="fpsVal">60.0 FPS</span>
+                    </div>
+                    <div class="status-cell">
+                        <span class="status-label">BITRATE</span>
+                        <span class="status-val bitrate" id="bitrateVal">6,120 kb/s</span>
+                    </div>
+                    <div class="status-cell">
+                        <span class="status-val bridge" id="bridgeStatusBadge">
+                            <span>●</span> BRIDGE ONLINE
+                        </span>
+                    </div>
+                    <button class="audio-toggle-btn" id="audioToggleBtn" onclick="toggleMasterAudio()">🔊 AUDIO: ON</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================================================
+           1. RESPONSIVE FIT AUTO-SCALING (PRESERVA 1080x1920 NATIVO SENZA SCROLLBAR)
+           ========================================================================= */
+        function resizeStage() {
+            const wrapper = document.getElementById('stage-wrapper');
+            const targetW = 1080;
+            const targetH = 1920;
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const scale = Math.min(winW / targetW, winH / targetH);
+            wrapper.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', resizeStage);
+        window.addEventListener('DOMContentLoaded', resizeStage);
+
+        /* =========================================================================
+           2. SINTETIZZATORE PROCEDURALE STEREO (WEB AUDIO API A 60 FPS)
+           ========================================================================= */
+        let audioCtx = null;
+        let masterGain = null;
+        let bgmFilter = null;
+        let bgmGain = null;
+        let isAudioMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                    masterGain = audioCtx.createGain();
+                    masterGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                    masterGain.connect(audioCtx.destination);
+
+                    // BGM Sintetico Procedurale Cyber Ambient
+                    initProceduralBgm();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        document.addEventListener('click', () => { initAudio(); }, { once: true });
+        document.addEventListener('keydown', () => { initAudio(); }, { once: true });
+
+        function toggleMasterAudio() {
+            initAudio();
+            const btn = document.getElementById('audioToggleBtn');
+            if (!masterGain) return;
+            isAudioMuted = !isAudioMuted;
+            if (isAudioMuted) {
+                masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+                btn.textContent = "🔇 AUDIO: MUTO";
+            } else {
+                masterGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                btn.textContent = "🔊 AUDIO: ON";
+            }
+        }
+
+        // Scala Pentatonica Cristallina per Bumper Flipper (C4 - D4 - E4 - G4 - A4 - C5 - D5 - E5)
+        const bumperPentatonic = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 1046.50];
+
+        function playBumperChime(pitchIndex, boostVolume = 1.0) {
+            try {
+                if (isAudioMuted) return;
+                initAudio();
+                if (!audioCtx || !masterGain) return;
+
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                const freq = bumperPentatonic[pitchIndex % bumperPentatonic.length];
+                osc.frequency.setValueAtTime(freq, now);
+
+                // Armonica secondaria sparkle
+                const oscSparkle = audioCtx.createOscillator();
+                const gainSparkle = audioCtx.createGain();
+                oscSparkle.type = 'sine';
+                oscSparkle.frequency.setValueAtTime(freq * 2, now);
+
+                const baseVol = 0.08 * boostVolume;
+                gain.gain.setValueAtTime(baseVol, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+                gainSparkle.gain.setValueAtTime(baseVol * 0.4, now);
+                gainSparkle.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+                osc.connect(gain);
+                gain.connect(masterGain);
+                oscSparkle.connect(gainSparkle);
+                gainSparkle.connect(masterGain);
+
+                osc.start(now);
+                oscSparkle.start(now);
+                osc.stop(now + 0.36);
+                oscSparkle.stop(now + 0.19);
+            } catch (e) {}
+        }
+
+        function playPopSound(freq = 480) {
+            try {
+                if (isAudioMuted) return;
+                initAudio();
+                if (!audioCtx || !masterGain) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + 0.09);
+            } catch (e) {}
+        }
+
+        // Fanfare Adrenalinica per Rosa / Supernova + Bass Drop + Pioggia Monete
+        function playRoseFanfareDopamine() {
+            try {
+                if (isAudioMuted) return;
+                initAudio();
+                if (!audioCtx || !masterGain) return;
+                const now = audioCtx.currentTime;
+
+                // 1. Sub Bass Drop (85Hz -> 30Hz)
+                const subOsc = audioCtx.createOscillator();
+                const subGain = audioCtx.createGain();
+                subOsc.type = 'sine';
+                subOsc.frequency.setValueAtTime(85, now);
+                subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.8);
+                subGain.gain.setValueAtTime(0.3, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+                subOsc.connect(subGain);
+                subGain.connect(masterGain);
+                subOsc.start(now);
+                subOsc.stop(now + 0.9);
+
+                // 2. Victory Brass Chords
+                const chordNotes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                chordNotes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(2200, now);
+
+                    gain.gain.setValueAtTime(0.08, now + idx * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.07 + 0.6);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(masterGain);
+
+                    osc.start(now + idx * 0.07);
+                    osc.stop(now + idx * 0.07 + 0.65);
+                });
+
+                // 3. Cascata Metallica Monete (Pioggia di monete Web Audio)
+                for (let i = 0; i < 7; i++) {
+                    const coinOsc = audioCtx.createOscillator();
+                    const coinGain = audioCtx.createGain();
+                    coinOsc.type = 'sine';
+                    const cFreq = 1600 + Math.random() * 1200;
+                    const cStart = now + 0.15 + (i * 0.09);
+                    coinOsc.frequency.setValueAtTime(cFreq, cStart);
+                    coinGain.gain.setValueAtTime(0.05, cStart);
+                    coinGain.gain.exponentialRampToValueAtTime(0.0001, cStart + 0.12);
+                    coinOsc.connect(coinGain);
+                    coinGain.connect(masterGain);
+                    coinOsc.start(cStart);
+                    coinOsc.stop(cStart + 0.13);
+                }
+            } catch (e) {}
+        }
+
+        // BGM Procedurale Leggero & Dinamico (Modula il filtro in base al Caos)
+        function initProceduralBgm() {
+            try {
+                if (!audioCtx || !masterGain) return;
+                bgmGain = audioCtx.createGain();
+                bgmGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+
+                bgmFilter = audioCtx.createBiquadFilter();
+                bgmFilter.type = 'lowpass';
+                bgmFilter.frequency.setValueAtTime(450, audioCtx.currentTime); // Inizia caldo e morbido
+
+                bgmGain.connect(bgmFilter);
+                bgmFilter.connect(masterGain);
+
+                // Drone armonico continuo bifonico
+                const oscRoot = audioCtx.createOscillator();
+                oscRoot.type = 'triangle';
+                oscRoot.frequency.setValueAtTime(65.41, audioCtx.currentTime); // C2
+
+                const oscFifth = audioCtx.createOscillator();
+                oscFifth.type = 'sine';
+                oscFifth.frequency.setValueAtTime(98.00, audioCtx.currentTime); // G2
+
+                oscRoot.connect(bgmGain);
+                oscFifth.connect(bgmGain);
+
+                oscRoot.start();
+                oscFifth.start();
+            } catch (e) {}
+        }
+
+        function updateProceduralBgmChaos(chaosVal) {
+            if (!bgmFilter || !audioCtx) return;
+            try {
+                // Calma (0%): 450Hz -> Overdrive (100%): 3800Hz
+                const targetFreq = 450 + (chaosVal / 100) * 3350;
+                bgmFilter.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.2);
+            } catch (e) {}
+        }
+
+        /* =========================================================================
+           3. SPONSORIZZAZIONE ANDROBS.COM & SPEAKER VOCALE MULTILINGUA (IT, EN, ES, JA)
+           ========================================================================= */
+        const promoMessages = [
+            {
+                lang: 'it-IT',
+                flag: '🇮🇹',
+                text: "Trasforma il tuo telefono in una webcam 4K e traduci la tua voce in tempo reale con AndrObs punto com!"
+            },
+            {
+                lang: 'en-US',
+                flag: '🇬🇧',
+                text: "Turn your phone into a 4K webcam with real-time AI voice translation! Visit AndrObs dot com!"
+            },
+            {
+                lang: 'es-ES',
+                flag: '🇪🇸',
+                text: "¡Convierte tu móvil en una webcam 4K con traducción de voz por IA en tiempo real en AndrObs punto com!"
+            },
+            {
+                lang: 'ja-JP',
+                flag: '🇯🇵',
+                text: "スマホを4Kウェブカメラに変えて、AIでリアルタイム音声翻訳！今すぐ AndrObs ドットコムへ！"
+            }
+        ];
+
+        let promoIdx = 0;
+        let isSpeakingAnnouncement = false;
+
+        function triggerMultilingualPromo() {
+            if (isSpeakingAnnouncement) return; // Non interrompere gli annunci delle Rose
+            const promo = promoMessages[promoIdx % promoMessages.length];
+            promoIdx++;
+
+            const subtitleCard = document.getElementById('promoSubtitleCard');
+            const flagEl = document.getElementById('promoFlag');
+            const contentEl = document.getElementById('promoContentText');
+
+            flagEl.textContent = promo.flag;
+            contentEl.textContent = promo.text;
+            subtitleCard.classList.add('active');
+
+            speakVoiceWithLang(promo.text, promo.lang, () => {
+                setTimeout(() => {
+                    subtitleCard.classList.remove('active');
+                }, 2200);
+            });
+        }
+
+        function speakVoiceWithLang(text, langCode, onComplete = null) {
+            try {
+                if (!('speechSynthesis' in window)) {
+                    if (onComplete) onComplete();
+                    return;
+                }
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.lang = langCode;
+                utter.rate = 1.05;
+                utter.volume = isAudioMuted ? 0 : 0.65;
+
+                const voices = window.speechSynthesis.getVoices();
+                const matchedVoice = voices.find(v => v.lang.startsWith(langCode.slice(0, 2)));
+                if (matchedVoice) utter.voice = matchedVoice;
+
+                utter.onend = () => { if (onComplete) onComplete(); };
+                utter.onerror = () => { if (onComplete) onComplete(); };
+                window.speechSynthesis.speak(utter);
+            } catch (e) {
+                if (onComplete) onComplete();
+            }
+        }
+
+        function announceGiftVoice(user, giftName) {
+            isSpeakingAnnouncement = true;
+            const text = `Incredibile! ${user} ha donato ${giftName}! Il Trono del Reattore è suo!`;
+            speakVoiceWithLang(text, 'it-IT', () => {
+                isSpeakingAnnouncement = false;
+            });
+        }
+
+        // Avvio ciclo promozionale ogni 40 secondi
+        setInterval(() => {
+            triggerMultilingualPromo();
+        }, 40000);
+        setTimeout(() => triggerMultilingualPromo(), 3000);
+
+        /* =========================================================================
+           4. IL GIOCO: ANDROBS QUANTUM PINBALL REACTOR (CANVAS HD 60 FPS)
+           ========================================================================= */
+        const canvas = document.getElementById('physicsCanvas');
+        const ctx = canvas.getContext('2d');
+        const stage = document.getElementById('stage');
+
+        // Dimensioni logiche fisse 1040 x 1380
+        const LOGICAL_W = 1040;
+        const LOGICAL_H = 1380;
+
+        function resizeCanvasDpr() {
+            const dpr = Math.max(1, window.devicePixelRatio || 1);
+            canvas.width = LOGICAL_W * dpr;
+            canvas.height = LOGICAL_H * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvasDpr();
+        window.addEventListener('resize', resizeCanvasDpr);
+
+        // STATO TERMOMETRO DEL CAOS (0% -> 100%)
+        let chaosLevel = 10.0; // Inizia con un pizzico di vita
+        let isSupernovaActive = false;
+        let supernovaTimer = 0;
+
+        function addChaos(amount) {
+            chaosLevel = Math.min(100, chaosLevel + amount);
+            if (chaosLevel >= 85 && !isSupernovaActive) {
+                triggerSupernovaOverdrive();
+            }
+            updateChaosUI();
+        }
+
+        function triggerSupernovaOverdrive() {
+            isSupernovaActive = true;
+            supernovaTimer = 8.0; // 8 secondi di pura Supernova
+            stage.classList.add('supernova-glow');
+            playRoseFanfareDopamine();
+
+            // Rilascia 12 sfere esplosive turbo
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    spawnBall(currentKing.user, true, currentKing.avatar);
+                }, i * 90);
+            }
+        }
+
+        function updateChaosUI() {
+            const fill = document.getElementById('chaosFill');
+            const text = document.getElementById('chaosTextVal');
+            const val = Math.round(chaosLevel);
+
+            fill.style.width = `${val}%`;
+            if (isSupernovaActive || val >= 85) {
+                fill.classList.add('overdrive');
+                text.textContent = `⚡ ${val}% (SUPERNOVA OVERDRIVE!)`;
+            } else if (val > 40) {
+                fill.classList.remove('overdrive');
+                text.textContent = `🔥 ${val}% (RISCALDAMENTO)`;
+            } else {
+                fill.classList.remove('overdrive');
+                text.textContent = `✨ ${val}% (CALMA ARMONICA)`;
+            }
+
+            updateProceduralBgmChaos(chaosLevel);
+        }
+
+        // IL TRONO DEL REATTORE (AL CENTRO)
+        const reactorThrone = {
+            x: LOGICAL_W / 2,
+            y: LOGICAL_H / 2 - 20,
+            radius: 82,
+            shieldAngle: 0,
+            shieldHp: 100,
+            maxShieldHp: 100,
+            pulse: 0
+        };
+
+        // RE ATTUALE DELLA LIVE
+        let currentKing = {
+            user: "AndrObs_King",
+            avatar: "",
+            score: 25400
+        };
+
+        // 6 BUMPER NEON FLIPPER ATTORNO AL NUCLEO
+        const bumpers = [
+            { x: LOGICAL_W * 0.24, y: LOGICAL_H * 0.28, radius: 46, color: '#06b6d4', scale: 1, pitch: 0, shockwaves: [] },
+            { x: LOGICAL_W * 0.76, y: LOGICAL_H * 0.28, radius: 46, color: '#a855f7', scale: 1, pitch: 2, shockwaves: [] },
+            { x: LOGICAL_W * 0.16, y: LOGICAL_H * 0.50, radius: 44, color: '#facc15', scale: 1, pitch: 4, shockwaves: [] },
+            { x: LOGICAL_W * 0.84, y: LOGICAL_H * 0.50, radius: 44, color: '#fe2c55', scale: 1, pitch: 5, shockwaves: [] },
+            { x: LOGICAL_W * 0.28, y: LOGICAL_H * 0.74, radius: 46, color: '#10b981', scale: 1, pitch: 7, shockwaves: [] },
+            { x: LOGICAL_W * 0.72, y: LOGICAL_H * 0.74, radius: 46, color: '#38bdf8', scale: 1, pitch: 8, shockwaves: [] }
+        ];
+
+        // 2 GIRANDOLE LASER LATERALI
+        const laserSpinners = [
+            { x: LOGICAL_W * 0.12, y: LOGICAL_H * 0.36, angle: 0, speed: 0.05, length: 70 },
+            { x: LOGICAL_W * 0.88, y: LOGICAL_H * 0.36, angle: 0, speed: -0.05, length: 70 }
+        ];
+
+        // RESPINGENTI AUTOMATICI INFERIORI (PINBALL BOTTOM KICKERS / SLINGSHOTS)
+        const bottomKickers = [
+            { x1: 60, y1: LOGICAL_H - 120, x2: LOGICAL_W * 0.38, y2: LOGICAL_H - 40 },
+            { x1: LOGICAL_W - 60, y1: LOGICAL_H - 120, x2: LOGICAL_W * 0.62, y2: LOGICAL_H - 40 }
+        ];
+
+        // SFERE GIOCATORI & PARTICELLE
+        const balls = [];
+        const particles = [];
+        const floatingTexts = [];
+        const avatarImageCache = {};
+
+        function preloadAvatar(url) {
+            if (!url || avatarImageCache[url]) return;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = url;
+            avatarImageCache[url] = img;
+        }
+
+        class Ball {
+            constructor(user, isGold = false, avatar = '', isMeteor = false) {
+                this.user = user || "Spettatore";
+                this.isGold = isGold;
+                this.isMeteor = isMeteor;
+                this.avatar = avatar;
+                this.radius = isMeteor ? 58 : (isGold ? 36 : 28);
+                this.x = isMeteor ? LOGICAL_W / 2 : (LOGICAL_W * 0.2 + Math.random() * (LOGICAL_W * 0.6));
+                this.y = isMeteor ? -60 : 40;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = isMeteor ? 14 : (2 + Math.random() * 4);
+                this.trail = [];
+                this.color = isMeteor ? '#fef08a' : (isGold ? '#facc15' : getRandomColorForUser(this.user));
+                this.bounces = 0;
+                this.lifeTime = 0;
+                this.maxLifeTime = 16.0; // 16 secondi di autonomia prima di riciclare
+                this.alpha = 1.0;
+                if (avatar) preloadAvatar(avatar);
+            }
+
+            update(dt) {
+                this.lifeTime += dt;
+
+                // Gravità normale o Vortice Buco Nero durante Supernova
+                if (isSupernovaActive) {
+                    const dx = reactorThrone.x - this.x;
+                    const dy = reactorThrone.y - this.y;
+                    const dist = Math.hypot(dx, dy) || 1;
+                    const force = 340 / (dist + 50);
+                    // Forza centripeta con rotazione tangenziale
+                    this.vx += (dx / dist) * force * 1.4 - (dy / dist) * force * 0.8;
+                    this.vy += (dy / dist) * force * 1.4 + (dx / dist) * force * 0.8;
+                } else {
+                    this.vy += 0.32; // Gravità 2D naturale costante
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Attrito leggero dell'aria
+                this.vx *= 0.994;
+                this.vy *= 0.994;
+
+                // Motion Trail (fino a 12 posizioni)
+                this.trail.push({ x: this.x, y: this.y, alpha: 1.0 });
+                if (this.trail.length > 12) this.trail.shift();
+                this.trail.forEach(t => t.alpha *= 0.88);
+
+                // Collisione Bordi Arena
+                if (this.x - this.radius < 18) {
+                    this.x = 18 + this.radius;
+                    this.vx = Math.abs(this.vx) * 0.85;
+                    playPopSound(340);
+                } else if (this.x + this.radius > LOGICAL_W - 18) {
+                    this.x = LOGICAL_W - 18 - this.radius;
+                    this.vx = -Math.abs(this.vx) * 0.85;
+                    playPopSound(340);
+                }
+
+                // Respingenti inferiori automatici (Lancia la sfera verso l'alto!)
+                if (this.y > LOGICAL_H - 100) {
+                    if (this.y + this.radius > LOGICAL_H - 25) {
+                        this.y = LOGICAL_H - 25 - this.radius;
+                        this.vy = -18 - Math.random() * 5;
+                        this.vx = (Math.random() - 0.5) * 14;
+                        this.bounces++;
+                        playBumperChime(6, 1.2);
+                        spawnImpactParticles(this.x, this.y, '#38bdf8', 10);
+                        addFloatingText("+200 KICK!", this.x, this.y - 20, '#38bdf8');
+                    }
+                }
+
+                // Dissolvenza a fine vita
+                if (this.lifeTime > this.maxLifeTime - 1.5) {
+                    this.alpha = Math.max(0, (this.maxLifeTime - this.lifeTime) / 1.5);
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+
+                // 1. Motion Trail Cometario
+                if (this.trail.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = this.isGold ? 7 : 4;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                }
+
+                // 2. Cerchio Avatar o Gradiente
+                const cachedImg = this.avatar ? avatarImageCache[this.avatar] : null;
+                const hasImg = cachedImg && cachedImg.complete && cachedImg.naturalWidth > 0;
+
+                if (hasImg) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(cachedImg, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+                    ctx.restore();
+
+                    // Anello Neon Luminoso
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = this.isGold ? 6 : 4;
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = this.isGold ? 26 : 14;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = this.isGold ? 26 : 14;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Iniziale centrata
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = `900 ${this.radius * 0.9}px 'Outfit'`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    const initial = this.user ? this.user.replace(/^@/, '').charAt(0).toUpperCase() : 'A';
+                    ctx.fillText(initial, this.x, this.y + 2);
+                }
+
+                // 3. @NICKNAME SEMPRE DRITTO E LEGGIBILE (18px BOLD)
+                ctx.font = "900 18px 'Outfit'";
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 4;
+                const displayName = this.user.startsWith('@') ? this.user : '@' + this.user;
+                const textY = this.y - this.radius - 8;
+                ctx.strokeText(displayName, this.x, textY);
+                ctx.fillStyle = this.isGold ? "#fef08a" : "#ffffff";
+                ctx.fillText(displayName, this.x, textY);
+
+                ctx.restore();
+            }
+        }
+
+        function getRandomColorForUser(name) {
+            const colors = ['#06b6d4', '#3b82f6', '#a855f7', '#ec4899', '#10b981', '#f59e0b', '#38bdf8'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        function spawnBall(user, isGold = false, avatar = '', isMeteor = false) {
+            if (balls.length > 28) {
+                balls.shift(); // Evita saturazione array mantenendo 60 FPS
+            }
+            const ball = new Ball(user, isGold, avatar, isMeteor);
+            balls.push(ball);
+            updateActiveBallsBadge();
+            return ball;
+        }
+
+        function updateActiveBallsBadge() {
+            document.getElementById('activeBallsCount').textContent = `${balls.length} SFÉRE ATTIVE`;
+        }
+
+        function spawnImpactParticles(x, y, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 8;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: 2 + Math.random() * 4,
+                    color: color,
+                    alpha: 1.0,
+                    life: 0.6 + Math.random() * 0.4
+                });
+            }
+        }
+
+        function addFloatingText(text, x, y, color = '#facc15') {
+            floatingTexts.push({
+                text, x, y,
+                color,
+                alpha: 1.0,
+                vy: -2.2
+            });
+        }
+
+        /* =========================================================================
+           5. GESTIONE COLLISIONI FISICHE & LOGICA REATTORE
+           ========================================================================= */
+        function checkPhysicsCollisions() {
+            const multiplier = isSupernovaActive ? 10 : 1;
+
+            for (let i = 0; i < balls.length; i++) {
+                const b = balls[i];
+
+                // 1. COLLISIONE CON I 6 BUMPER NEON (PINBALL BOUNCE)
+                bumpers.forEach(bm => {
+                    const dx = b.x - bm.x;
+                    const dy = b.y - bm.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = b.radius + bm.radius * bm.scale;
+
+                    if (dist < minDist && dist > 0) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        b.x = bm.x + nx * (minDist + 2);
+
+                        // Restituzione potente (1.35x velocity boost)
+                        const dot = b.vx * nx + b.vy * ny;
+                        b.vx = (b.vx - 2 * dot * nx) * 1.35;
+                        b.vy = (b.vy - 2 * dot * ny) * 1.35;
+
+                        // Animazione espansione neon bumper
+                        bm.scale = 1.35;
+                        bm.shockwaves.push({ r: bm.radius, alpha: 1.0 });
+
+                        // Audio accordo pentatonico
+                        playBumperChime(bm.pitch, isSupernovaActive ? 1.5 : 1.0);
+                        spawnImpactParticles(b.x, b.y, bm.color, 14);
+
+                        const pts = 50 * multiplier;
+                        addScore(b.user, pts);
+                        addFloatingText(`+${pts}!`, b.x, b.y - 15, bm.color);
+                        addChaos(2.5);
+                    }
+                });
+
+                // 2. COLLISIONE CON IL TRONO CENTRALE DEL REATTORE
+                const rdx = b.x - reactorThrone.x;
+                const rdy = b.y - reactorThrone.y;
+                const rDist = Math.hypot(rdx, rdy);
+                const rMinDist = b.radius + reactorThrone.radius;
+
+                if (rDist < rMinDist && rDist > 0) {
+                    const rnx = rdx / rDist;
+                    const rny = rdy / rDist;
+                    b.x = reactorThrone.x + rnx * (rMinDist + 2);
+
+                    const dot = b.vx * rnx + b.vy * rny;
+                    b.vx = (b.vx - 2 * dot * rnx) * 1.25;
+                    b.vy = (b.vy - 2 * dot * rny) * 1.25;
+
+                    spawnImpactParticles(b.x, b.y, '#facc15', 18);
+                    playBumperChime(9, 1.4);
+
+                    // Se è la METEORA DORATA della Rosa: Incoronazione Immediata!
+                    if (b.isMeteor) {
+                        crownNewKing(b.user, b.avatar);
+                        addFloatingText("👑 NUOVO RE!", reactorThrone.x, reactorThrone.y - 90, '#fef08a');
+                    } else {
+                        // Riduce lo scudo del Re
+                        reactorThrone.shieldHp -= 15;
+                        addFloatingText("-15 SCUDO!", b.x, b.y - 20, '#ef4444');
+
+                        if (reactorThrone.shieldHp <= 0) {
+                            // COLPO DI GRAZIA: RUBA IL TRONO!
+                            crownNewKing(b.user, b.avatar);
+                            addFloatingText("👑 TRONO ESPUGNATO!", reactorThrone.x, reactorThrone.y - 90, '#fef08a');
+                        }
+                    }
+                }
+
+                // 3. COLLISIONI PALLA CONTRO PALLA (ELASTICHE 2D)
+                for (let j = i + 1; j < balls.length; j++) {
+                    const b2 = balls[j];
+                    const bdx = b2.x - b.x;
+                    const bdy = b2.y - b.y;
+                    const bDist = Math.hypot(bdx, bdy);
+                    const bMinDist = b.radius + b2.radius;
+
+                    if (bDist < bMinDist && bDist > 0) {
+                        const bnx = bdx / bDist;
+                        const bny = bdy / bDist;
+                        const overlap = bMinDist - bDist;
+
+                        b.x -= bnx * (overlap * 0.5);
+                        b.y -= bny * (overlap * 0.5);
+                        b2.x += bnx * (overlap * 0.5);
+                        b2.y += bny * (overlap * 0.5);
+
+                        const kx = b.vx - b2.vx;
+                        const ky = b.vy - b2.vy;
+                        const p = 2 * (bnx * kx + bny * ky) / 2;
+
+                        b.vx -= p * bnx * 0.95;
+                        b.vy -= p * bny * 0.95;
+                        b2.vx += p * bnx * 0.95;
+                        b2.vy += p * bny * 0.95;
+
+                        // Se durante Supernova, arco di fulmine tra palline!
+                        if (isSupernovaActive && Math.random() > 0.6) {
+                            drawLightningArc(b.x, b.y, b2.x, b2.y);
+                        }
+                    }
+                }
+            }
+        }
+
+        function crownNewKing(user, avatar = '') {
+            currentKing.user = user;
+            currentKing.avatar = avatar;
+            reactorThrone.shieldHp = reactorThrone.maxShieldHp;
+
+            playRoseFanfareDopamine();
+            spawnImpactParticles(reactorThrone.x, reactorThrone.y, '#facc15', 50);
+
+            // Aggiorna banner celebrazione
+            const banner = document.getElementById('celebrationBanner');
+            document.getElementById('celTitle').textContent = `👑 NUOVO RE DELLA LIVE!`;
+            document.getElementById('celSub').textContent = `@${user} conquista il Trono del Reattore!`;
+            if (avatar) {
+                document.getElementById('celAvatar').src = avatar;
+            }
+            banner.classList.add('active');
+            setTimeout(() => banner.classList.remove('active'), 3800);
+
+            addFeedLine("👑", user, "espugna il Trono del Reattore!");
+            addScore(user, 2000);
+            addChaos(30);
+        }
+
+        function drawLightningArc(x1, y1, x2, y2) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            const midX = (x1 + x2) / 2 + (Math.random() - 0.5) * 40;
+            const midY = (y1 + y2) / 2 + (Math.random() - 0.5) * 40;
+            ctx.lineTo(midX, midY);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = '#fef08a';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#facc15';
+            ctx.shadowBlur = 14;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        /* =========================================================================
+           6. RENDER LOOP A 60 FPS (CANVAS FISICA + PARTICELLE + HUD)
+           ========================================================================= */
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let lastFpsUpdate = performance.now();
+
+        function renderReactorScene() {
+            const now = performance.now();
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+
+            // Calcolo FPS
+            frameCount++;
+            if (now - lastFpsUpdate >= 1000) {
+                const fps = (frameCount * 1000 / (now - lastFpsUpdate)).toFixed(1);
+                document.getElementById('fpsVal').textContent = `${fps} FPS`;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+
+            // Decay Naturale del Caos (-2.5% al secondo)
+            if (chaosLevel > 0) {
+                chaosLevel = Math.max(0, chaosLevel - 2.5 * dt);
+                if (isSupernovaActive) {
+                    supernovaTimer -= dt;
+                    if (supernovaTimer <= 0) {
+                        isSupernovaActive = false;
+                        stage.classList.remove('supernova-glow');
+                    }
+                }
+                updateChaosUI();
+            }
+
+            // Pulizia Canvas
+            ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+            // 1. Sfondo Griglia Neon
+            drawCyberGrid();
+
+            // 2. Disegna 6 Bumper Flipper al Neon
+            drawBumpers(dt);
+
+            // 3. Disegna Respingenti Slingshot Inferiori
+            drawBottomKickers();
+
+            // 4. Disegna Il Trono del Reattore (Centro)
+            drawReactorThrone(dt);
+
+            // 5. Aggiorna e Disegna Sfere Giocatori
+            checkPhysicsCollisions();
+            for (let i = balls.length - 1; i >= 0; i--) {
+                const b = balls[i];
+                b.update(dt);
+                b.draw();
+                if (b.alpha <= 0.05) {
+                    balls.splice(i, 1);
+                    updateActiveBallsBadge();
+                }
+            }
+
+            // 6. Aggiorna e Disegna Particelle
+            drawParticles(dt);
+
+            // 7. Aggiorna e Disegna Testi Fluttuanti (+500!, JACKPOT!)
+            drawFloatingTexts();
+
+            requestAnimationFrame(renderReactorScene);
+        }
+
+        function drawCyberGrid() {
+            ctx.save();
+            ctx.strokeStyle = isSupernovaActive ? 'rgba(254, 44, 85, 0.12)' : 'rgba(6, 182, 212, 0.08)';
+            ctx.lineWidth = 1.5;
+
+            // Raggi circolari concentrici dal centro
+            for (let r = 120; r <= 600; r += 120) {
+                ctx.beginPath();
+                ctx.arc(reactorThrone.x, reactorThrone.y, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Linee radiali
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
+                ctx.beginPath();
+                ctx.moveTo(reactorThrone.x, reactorThrone.y);
+                ctx.lineTo(reactorThrone.x + Math.cos(a) * 650, reactorThrone.y + Math.sin(a) * 650);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawBumpers(dt) {
+            bumpers.forEach(bm => {
+                // Spring back animation
+                bm.scale += (1 - bm.scale) * 0.12;
+
+                ctx.save();
+                ctx.translate(bm.x, bm.y);
+                ctx.scale(bm.scale, bm.scale);
+
+                // Cerchio Bumper esterno neon
+                ctx.beginPath();
+                ctx.arc(0, 0, bm.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.shadowColor = bm.color;
+                ctx.shadowBlur = 25;
+                ctx.fill();
+
+                ctx.strokeStyle = bm.color;
+                ctx.lineWidth = 6;
+                ctx.stroke();
+
+                // Nucleo Bumper interno
+                ctx.beginPath();
+                ctx.arc(0, 0, bm.radius * 0.45, 0, Math.PI * 2);
+                ctx.fillStyle = bm.color;
+                ctx.fill();
+
+                // Moltiplicatore o icona centrale
+                ctx.fillStyle = '#ffffff';
+                ctx.font = "900 16px 'JetBrains Mono'";
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(isSupernovaActive ? 'x10' : 'x2', 0, 0);
+
+                ctx.restore();
+
+                // Disegna shockwaves concentriche
+                for (let s = bm.shockwaves.length - 1; s >= 0; s--) {
+                    const sw = bm.shockwaves[s];
+                    sw.r += 3.5;
+                    sw.alpha -= 0.04;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(bm.x, bm.y, sw.r, 0, Math.PI * 2);
+                    ctx.strokeStyle = bm.color;
+                    ctx.globalAlpha = Math.max(0, sw.alpha);
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    ctx.restore();
+                    if (sw.alpha <= 0) bm.shockwaves.splice(s, 1);
+                }
+            });
+        }
+
+        function drawBottomKickers() {
+            ctx.save();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 8;
+            ctx.shadowColor = '#06b6d4';
+            ctx.shadowBlur = 18;
+            ctx.lineCap = 'round';
+
+            bottomKickers.forEach(k => {
+                ctx.beginPath();
+                ctx.moveTo(k.x1, k.y1);
+                ctx.lineTo(k.x2, k.y2);
+                ctx.stroke();
+            });
+
+            // Respingente centrale elastico
+            ctx.beginPath();
+            ctx.arc(LOGICAL_W / 2, LOGICAL_H - 18, 48, Math.PI, 0);
+            ctx.strokeStyle = '#facc15';
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawReactorThrone(dt) {
+            reactorThrone.shieldAngle += 0.025;
+            reactorThrone.pulse += 0.05;
+
+            const x = reactorThrone.x;
+            const y = reactorThrone.y;
+            const r = reactorThrone.radius;
+
+            ctx.save();
+
+            // 1. Aura Energetica Rotante (Scudo)
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(reactorThrone.shieldAngle);
+
+            const shieldSegments = 6;
+            for (let i = 0; i < shieldSegments; i++) {
+                const angleStart = (i * Math.PI * 2) / shieldSegments;
+                const angleEnd = angleStart + (Math.PI / 4);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, r + 14, angleStart, angleEnd);
+                ctx.strokeStyle = isSupernovaActive ? '#fe2c55' : '#facc15';
+                ctx.lineWidth = 7;
+                ctx.shadowColor = isSupernovaActive ? '#fe2c55' : '#facc15';
+                ctx.shadowBlur = 24;
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 2. Cerchio Principale Trono
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#0f172a';
+            ctx.shadowColor = '#facc15';
+            ctx.shadowBlur = 30;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // 3. Foto Profilo Re o Corona
+            const cachedKingImg = currentKing.avatar ? avatarImageCache[currentKing.avatar] : null;
+            if (cachedKingImg && cachedKingImg.complete && cachedKingImg.naturalWidth > 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, r - 6, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(cachedKingImg, x - (r - 6), y - (r - 6), (r - 6) * 2, (r - 6) * 2);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = '#facc15';
+                ctx.font = "900 52px 'Outfit'";
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('👑', x, y);
+            }
+
+            // 4. Corona Fluttuante sopra il Trono
+            const crownY = y - r - 22 + Math.sin(reactorThrone.pulse) * 5;
+            ctx.font = "900 36px 'Outfit'";
+            ctx.textAlign = 'center';
+            ctx.fillText('👑', x, crownY);
+
+            // 5. Banner Nome Re
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 2;
+            const bannerW = 200;
+            const bannerH = 28;
+            ctx.fillRect(x - bannerW / 2, y + r - 12, bannerW, bannerH);
+            ctx.strokeRect(x - bannerW / 2, y + r - 12, bannerW, bannerH);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = "900 16px 'Outfit'";
+            ctx.textBaseline = 'middle';
+            const kingName = currentKing.user.startsWith('@') ? currentKing.user : '@' + currentKing.user;
+            ctx.fillText(kingName, x, y + r + 2);
+
+            // Barra Scudo HP Reattore
+            const hpWidth = (reactorThrone.shieldHp / reactorThrone.maxShieldHp) * 160;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(x - 80, y + r + 20, 160, 8);
+            ctx.fillStyle = reactorThrone.shieldHp > 30 ? '#22c55e' : '#ef4444';
+            ctx.fillRect(x - 80, y + r + 20, Math.max(0, hpWidth), 8);
+
+            ctx.restore();
+        }
+
+        function drawParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= dt / p.life;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawFloatingTexts() {
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy;
+                ft.alpha -= 0.022;
+
+                if (ft.alpha <= 0) {
+                    floatingTexts.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.font = "900 24px 'JetBrains Mono'";
+                ctx.textAlign = 'center';
+                ctx.fillStyle = ft.color;
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            }
+        }
+
+        /* =========================================================================
+           7. GESTIONE PUNTEGGI & FEED EVENTI
+           ========================================================================= */
+        const userScores = {
+            "AndrObs_King": 25400,
+            "StreamerPro": 18200,
+            "QuantumPilot": 12850,
+            "NeonRider": 9400,
+            "CyberGamer": 7150
+        };
+
+        function addScore(user, points) {
+            userScores[user] = (userScores[user] || 0) + points;
+            updateLeaderboardUI();
+        }
+
+        function updateLeaderboardUI() {
+            const sorted = Object.entries(userScores).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const listEl = document.getElementById('leaderboardList');
+            if (sorted.length === 0 || !listEl) return;
+
+            const ranks = ["🥇", "🥈", "🥉", "4.", "5."];
+            const classes = ["gold", "silver", "bronze", "", ""];
+
+            listEl.innerHTML = sorted.map((s, idx) => {
+                const isRankClass = classes[idx] ? ` ${classes[idx]}` : "";
+                const uDisplay = s[0].startsWith('@') ? s[0] : '@' + s[0];
+                return `<div class="lb-row${isRankClass}"><span>${ranks[idx]} ${uDisplay}</span><span>${s[1].toLocaleString()} pt</span></div>`;
+            }).join('');
+        }
+
+        function addFeedLine(icon, user, text, isRose = false) {
+            const feed = document.getElementById('arenaFeed');
+            if (!feed) return;
+            const div = document.createElement('div');
+            div.className = `feed-line${isRose ? ' rose-line' : ''}`;
+            const uDisplay = user.startsWith('@') ? user : '@' + user;
+            div.innerHTML = `<span>${icon} <b>${uDisplay}</b> ${text}</span><span style="color:${isRose ? '#facc15' : '#64748b'};">Ora</span>`;
+            feed.prepend(div);
+            while (feed.children.length > 4) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        /* =========================================================================
+           8. PONTE GIOCATORI REALI TIKTOK (POLLING OGNI 800ms)
+           ========================================================================= */
+        let lastEventId = 0;
+        let lastRealEventTime = 0;
+
+        function promptChangeTikTokUser() {
+            const current = (document.getElementById('targetUserSpan').textContent || '').replace(/^@/, '');
+            const input = prompt("Inserisci il tuo username esatto di TikTok (senza @):", current);
+            if (input && input.trim()) {
+                const cleaned = input.trim().replace(/^@/, '');
+                setNewTikTokTarget(cleaned);
+            }
+        }
+
+        function setNewTikTokTarget(user) {
+            if (!user) return;
+            const cleaned = user.trim().replace(/^@/, '');
+            document.getElementById('targetUserSpan').textContent = `@${cleaned}`;
+            try { localStorage.setItem('androbs_tiktok_user', cleaned); } catch (e) {}
+            fetch(`/tiktok_events.php?target=${encodeURIComponent(cleaned)}`).catch(() => {});
+        }
+
+        // Rilevamento iniziale: URL (?user= o ?target=) -> LocalStorage -> Default
+        const urlParams = new URLSearchParams(window.location.search);
+        let initialUser = urlParams.get('user') || urlParams.get('target') || '';
+        if (!initialUser) {
+            try { initialUser = localStorage.getItem('androbs_tiktok_user') || ''; } catch (e) {}
+        }
+        if (initialUser) {
+            setNewTikTokTarget(initialUser);
+        }
+
+        async function pollTikTokEvents() {
+            try {
+                const res = await fetch(`/tiktok_events.php?since=${lastEventId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.target_user) {
+                        const targetSpan = document.getElementById('targetUserSpan');
+                        if (targetSpan && targetSpan.textContent !== `@${data.target_user}`) {
+                            targetSpan.textContent = `@${data.target_user}`;
+                        }
+                    }
+
+                    if (data.events && data.events.length > 0) {
+                        for (const ev of data.events) {
+                            if (ev.id > lastEventId) lastEventId = ev.id;
+                            handleRealTikTokEvent(ev);
+                        }
+                    }
+                }
+            } catch (e) {}
+            setTimeout(pollTikTokEvents, 800);
+        }
+        pollTikTokEvents();
+
+        function handleRealTikTokEvent(ev) {
+            lastRealEventTime = Date.now();
+            const u = ev.nickname || ev.user || "Spettatore";
+            const avatar = ev.avatar || "";
+
+            if (avatar) preloadAvatar(avatar);
+
+            if (ev.type === "gift") {
+                const giftName = ev.giftName || "Rosa";
+                const count = ev.repeatCount || 1;
+
+                // 1. Screen Shake fluido (1.2s) + Flash dorato
+                stage.classList.add('shake-active', 'gold-flash');
+                setTimeout(() => {
+                    stage.classList.remove('shake-active', 'gold-flash');
+                }, 1200);
+
+                // 2. Audio Dopamina + Voce TTS
+                playRoseFanfareDopamine();
+                announceGiftVoice(u, giftName);
+
+                // 3. Sgancia la METEORA DORATA GIGANTE
+                spawnBall(u, true, avatar, true);
+
+                // 4. Rilascia 6 Sfere Dorate Bonus in sequenza
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => {
+                        spawnBall(u, true, avatar, false);
+                    }, 140 * (i + 1));
+                }
+
+                // 5. Punteggio & Aumento Caos (+40%)
+                addScore(u, 1000 * count);
+                addFeedLine("🌹", u, `dona ${count}x ${giftName}! Meteora Dorata!`, true);
+                addChaos(40 * count);
+
+            } else if (ev.type === "comment") {
+                // Sfera Turbo x2
+                spawnBall(u, false, avatar);
+                setTimeout(() => spawnBall(u, false, avatar), 160);
+                addScore(u, 40);
+                addFeedLine("💬", u, ev.text ? `: ${ev.text}` : "Chat Turbo x2!");
+                playPopSound(540);
+                addChaos(4);
+
+            } else if (ev.type === "like") {
+                // Sfera Attacco
+                spawnBall(u, false, avatar);
+                addScore(u, 15);
+                addFeedLine("❤️", u, `Like x${ev.repeatCount || 1}!`);
+                playPopSound(420);
+                addChaos(4);
+
+            } else if (ev.type === "join") {
+                spawnBall(u, false, avatar);
+                addScore(u, 10);
+                addFeedLine("👋", u, "entra nell'Arena!");
+                playPopSound(320);
+            }
+        }
+
+        /* =========================================================================
+           9. SIMULATORE IBRIDO INTELLIGENTE (POPOLA SE NESSUN EVENTO REALE > 2.5s)
+           ========================================================================= */
+        const simulatedUsers = [
+            "Marco_Streamer", "Alessia_Tech", "Luca_FPS", "Giulia_Live", "Mario_Gamer",
+            "Alex_Stream", "Samuele99", "Federica_Plays", "Elena_Creator", "Matteo_Vlog",
+            "David_UK", "Laura_ES", "Kenji_Tokyo", "Sofia_Milano", "Kevin_Pro",
+            "Diego_Madrid", "Charlotte_London", "Yuki_Osaka", "Antonio_Roma", "Emma_Gaming"
+        ];
+
+        let simUserIdx = 0;
+        function getNextSimUser() {
+            simUserIdx++;
+            return simulatedUsers[simUserIdx % simulatedUsers.length];
+        }
+
+        function scheduleAutonomousFiller() {
+            const isQuiet = (Date.now() - lastRealEventTime > 2500);
+
+            // Mantieni sempre tra 6 e 10 sfere in movimento
+            if (isQuiet && balls.length < 8) {
+                const u = getNextSimUser();
+                const isTurbo = Math.random() > 0.6;
+                spawnBall(u, false);
+                if (isTurbo) {
+                    setTimeout(() => spawnBall(u, false), 150);
+                    addFeedLine("💬", u, "Chat Turbo x2!");
+                } else {
+                    addFeedLine("❤️", u, "Like Attacco!");
+                }
+                addChaos(3);
+            }
+
+            const nextDelay = 1400 + Math.random() * 1200;
+            setTimeout(scheduleAutonomousFiller, nextDelay);
+        }
+        setTimeout(scheduleAutonomousFiller, 1000);
+
+        // Simulazione Rosa di test solo se nessun regalo reale da oltre 45 secondi
+        function scheduleAutonomousRoseSurge() {
+            if (Date.now() - lastRealEventTime > 45000) {
+                const u = getNextSimUser();
+                stage.classList.add('shake-active', 'gold-flash');
+                setTimeout(() => stage.classList.remove('shake-active', 'gold-flash'), 1200);
+
+                playRoseFanfareDopamine();
+                spawnBall(u, true, '', true); // Meteora Dorata
+
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => spawnBall(u, true, ''), 150 * (i + 1));
+                }
+
+                addScore(u, 1000);
+                addFeedLine("🌹", u, "dona 1 Rosa! Meteora Dorata!", true);
+                addChaos(40);
+            }
+            setTimeout(scheduleAutonomousRoseSurge, 48000 + Math.random() * 12000);
+        }
+        setTimeout(scheduleAutonomousRoseSurge, 25000);
+
+        /* =========================================================================
+           10. TELEMETRIA STATUS BAR (OROLOGIO MS, FPS, BITRATE)
+           ========================================================================= */
+        const clockEl = document.getElementById('clockVal');
+        setInterval(() => {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+            clockEl.textContent = `${h}:${m}:${s}.${ms}`;
+        }, 50);
+
+        const bitrateEl = document.getElementById('bitrateVal');
+        setInterval(() => {
+            const b = 6100 + Math.floor(Math.sin(Date.now() / 1500) * 180) + Math.floor(Math.random() * 60);
+            bitrateEl.textContent = b.toLocaleString() + ' kb/s';
+        }, 1200);
+
+        // Avvio Motore Grafico
+        renderReactorScene();
+    </script>
+</body>
+</html>
