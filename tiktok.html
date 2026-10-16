@@ -12,20 +12,22 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         :root {
-            --bg-deep: #030712;
-            --cyan-glow: #06b6d4;
+            --bg-deep: #1a0810;
+            --amber-glow: #f59e0b;
             --purple-glow: #a855f7;
             --rose-glow: #fe2c55;
             --gold-glow: #facc15;
             --gold-bright: #fef08a;
-            --neon-border: rgba(6, 182, 212, 0.45);
+            --neon-border: rgba(245, 158, 11, 0.45);
+            --panel-bg: rgba(52, 18, 24, 0.94);
+            --panel-bg-deep: rgba(34, 10, 18, 0.9);
         }
 
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #02040a;
+            background: #12040a;
             color: #ffffff;
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
             user-select: none;
@@ -39,10 +41,10 @@
             position: absolute;
             inset: 0;
             background: 
-                radial-gradient(circle at 50% 20%, rgba(6, 182, 212, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 50% 20%, rgba(250, 204, 21, 0.13) 0%, transparent 45%),
                 radial-gradient(circle at 20% 75%, rgba(168, 85, 247, 0.16) 0%, transparent 50%),
-                radial-gradient(circle at 80% 85%, rgba(254, 44, 85, 0.14) 0%, transparent 50%),
-                linear-gradient(180deg, #02040a 0%, #050b18 50%, #02040a 100%);
+                radial-gradient(circle at 80% 85%, rgba(254, 44, 85, 0.16) 0%, transparent 50%),
+                linear-gradient(180deg, #12040a 0%, #1c0714 50%, #12040a 100%);
             z-index: 0;
             pointer-events: none;
         }
@@ -78,7 +80,7 @@
             flex-direction: column;
             padding: 16px 20px 14px 20px;
             gap: 10px;
-            background: #030712;
+            background: #1a0810;
             overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9);
             border-left: 2px solid rgba(255, 255, 255, 0.08);
@@ -109,17 +111,17 @@
             100% { transform: translate(0, 0) rotate(0deg); }
         }
 
-        /* 1. HEADER (68px) - SAFE ZONE ALTA */
+        /* 1. HEADER (82px) - SAFE ZONE ALTA */
         .header-bar {
-            height: 68px;
-            min-height: 68px;
+            height: 82px;
+            min-height: 82px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            background: rgba(15, 23, 42, 0.94);
+            background: var(--panel-bg);
             backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.16);
+            border: 2px solid rgba(250, 204, 21, 0.28);
             border-radius: 18px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.7);
             z-index: 20;
@@ -132,32 +134,32 @@
         }
 
         .logo-badge {
-            width: 46px;
-            height: 46px;
-            background: linear-gradient(135deg, #06b6d4, #a855f7);
-            border-radius: 12px;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #f59e0b, #dc2626, #a855f7);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 26px;
+            font-size: 30px;
             color: #fff;
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.7);
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
         .logo-text h1 {
-            font-size: 26px;
+            font-size: 31px;
             font-weight: 900;
             letter-spacing: -0.5px;
-            background: linear-gradient(90deg, #ffffff 30%, #38bdf8 100%);
+            background: linear-gradient(90deg, #ffffff 30%, #fbbf24 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             line-height: 1.1;
         }
         .logo-text p {
-            font-size: 13px;
-            color: #94a3b8;
+            font-size: 14.5px;
+            color: #d8a8b8;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1.4px;
@@ -175,9 +177,9 @@
             gap: 8px;
             background: rgba(16, 185, 129, 0.18);
             border: 1.5px solid #10b981;
-            padding: 5px 14px;
+            padding: 6px 16px;
             border-radius: 999px;
-            font-size: 15px;
+            font-size: 17px;
             font-weight: 800;
             color: #34d399;
             font-family: 'JetBrains Mono', monospace;
@@ -194,21 +196,21 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(6, 182, 212, 0.22);
-            border: 2px solid #06b6d4;
-            padding: 6px 16px;
+            background: rgba(245, 158, 11, 0.2);
+            border: 2px solid #f59e0b;
+            padding: 7px 18px;
             border-radius: 12px;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 900;
-            color: #38bdf8;
+            color: #fbbf24;
             font-family: 'JetBrains Mono', monospace;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         .target-streamer-pill:hover {
-            background: rgba(6, 182, 212, 0.45);
+            background: rgba(245, 158, 11, 0.42);
             transform: scale(1.03);
-            box-shadow: 0 0 16px rgba(6, 182, 212, 0.5);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
         }
 
         .live-pill {
@@ -217,9 +219,9 @@
             gap: 8px;
             background: rgba(239, 68, 68, 0.25);
             border: 2px solid #ef4444;
-            padding: 6px 14px;
+            padding: 7px 16px;
             border-radius: 999px;
-            font-size: 17px;
+            font-size: 19px;
             font-weight: 900;
             letter-spacing: 1px;
             color: #ef4444;
@@ -237,11 +239,11 @@
             50% { transform: scale(1.4); opacity: 0.5; box-shadow: 0 0 4px #ef4444; }
         }
 
-        /* 2. MEGA-BANNER MARQUEE NEON (44px) */
+        /* 2. MEGA-BANNER MARQUEE NEON (52px) */
         .promo-marquee {
-            height: 44px;
-            min-height: 44px;
-            background: linear-gradient(90deg, #06b6d4, #a855f7, #fe2c55, #facc15, #06b6d4);
+            height: 52px;
+            min-height: 52px;
+            background: linear-gradient(90deg, #f59e0b, #dc2626, #a855f7, #fe2c55, #f59e0b);
             background-size: 300% 100%;
             animation: gradient-shift 10s ease infinite;
             border-radius: 12px;
@@ -249,7 +251,7 @@
             display: flex;
             align-items: center;
             position: relative;
-            box-shadow: 0 0 24px rgba(6, 182, 212, 0.45);
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.45);
             border: 1px solid rgba(255, 255, 255, 0.25);
             z-index: 18;
         }
@@ -263,7 +265,7 @@
             white-space: nowrap;
             animation: marquee 22s linear infinite;
             font-weight: 900;
-            font-size: 18px;
+            font-size: 22px;
             letter-spacing: 1px;
             color: #ffffff;
             gap: 40px;
@@ -283,9 +285,9 @@
         }
 
         .chaos-meter-container {
-            height: 38px;
-            background: rgba(15, 23, 42, 0.92);
-            border: 2px solid rgba(255, 255, 255, 0.18);
+            height: 46px;
+            background: var(--panel-bg);
+            border: 2px solid rgba(245, 158, 11, 0.35);
             border-radius: 12px;
             padding: 3px 6px;
             position: relative;
@@ -301,10 +303,10 @@
             top: 0;
             bottom: 0;
             width: 0%;
-            background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 30%, #a855f7 60%, #facc15 85%, #ef4444 100%);
+            background: linear-gradient(90deg, #f59e0b 0%, #f97316 30%, #dc2626 60%, #facc15 85%, #fef08a 100%);
             border-radius: 9px;
             transition: width 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
         }
 
         .chaos-meter-fill.overdrive {
@@ -326,7 +328,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 14px;
-            font-size: 17px;
+            font-size: 20px;
             font-weight: 900;
             letter-spacing: 0.8px;
             color: #ffffff;
@@ -343,9 +345,9 @@
 
         /* BARRA OBIETTIVO REGALI (DIAMANTI) - attivata con ?goal=N */
         .goal-meter-container {
-            height: 38px;
-            background: rgba(15, 23, 42, 0.92);
-            border: 2px solid rgba(250, 204, 21, 0.45);
+            height: 46px;
+            background: var(--panel-bg);
+            border: 2px solid rgba(250, 204, 21, 0.55);
             border-radius: 12px;
             padding: 3px 6px;
             position: relative;
@@ -376,7 +378,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 14px;
-            font-size: 17px;
+            font-size: 20px;
             font-weight: 900;
             letter-spacing: 0.8px;
             color: #ffffff;
@@ -385,17 +387,17 @@
         }
 
         .rules-bar {
-            height: 32px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(10, 15, 30, 0.88);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            background: var(--panel-bg-deep);
+            border: 1.5px solid rgba(250, 204, 21, 0.2);
             border-radius: 10px;
             padding: 0 16px;
-            font-size: 14.5px;
+            font-size: 16.5px;
             font-weight: 800;
-            color: #cbd5e1;
+            color: #f0d9d0;
         }
         .rules-bar span.rose {
             color: #facc15;
@@ -403,7 +405,7 @@
             text-shadow: 0 0 10px rgba(250, 204, 21, 0.8);
         }
         .rules-bar span.highlight {
-            color: #38bdf8;
+            color: #fbbf24;
             font-weight: 900;
         }
 
@@ -414,10 +416,10 @@
             flex: 1;
             min-height: 0;
             border-radius: 22px;
-            border: 2px solid rgba(6, 182, 212, 0.5);
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.25);
+            border: 2px solid rgba(245, 158, 11, 0.55);
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.28);
             overflow: hidden;
-            background: radial-gradient(circle at 50% 50%, #0a1128 0%, #030712 95%);
+            background: radial-gradient(circle at 50% 50%, #2a0f1e 0%, #160510 95%);
             z-index: 10;
         }
 
@@ -434,14 +436,14 @@
             left: 50%;
             transform: translateX(-50%) translateY(-60px);
             opacity: 0;
-            background: rgba(15, 23, 42, 0.95);
-            border: 2px solid #38bdf8;
+            background: var(--panel-bg);
+            border: 2px solid #fbbf24;
             border-radius: 16px;
             padding: 10px 22px;
             display: flex;
             align-items: center;
             gap: 14px;
-            box-shadow: 0 8px 32px rgba(6, 182, 212, 0.6);
+            box-shadow: 0 8px 32px rgba(245, 158, 11, 0.6);
             z-index: 45;
             pointer-events: none;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -452,7 +454,7 @@
             transform: translateX(-50%) translateY(0);
         }
         .promo-flag {
-            font-size: 32px;
+            font-size: 36px;
             line-height: 1;
         }
         .promo-text-wrap {
@@ -460,14 +462,14 @@
             flex-direction: column;
         }
         .promo-sponsor-tag {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 900;
-            color: #38bdf8;
+            color: #fbbf24;
             letter-spacing: 1.5px;
             text-transform: uppercase;
         }
         .promo-content-text {
-            font-size: 17px;
+            font-size: 20px;
             font-weight: 800;
             color: #ffffff;
             line-height: 1.25;
@@ -483,7 +485,7 @@
             background: linear-gradient(135deg, rgba(234, 179, 8, 0.98), rgba(220, 38, 38, 0.98));
             border: 3px solid #fef08a;
             border-radius: 18px;
-            padding: 12px 30px;
+            padding: 14px 34px;
             text-align: center;
             box-shadow: 0 0 50px rgba(250, 204, 21, 0.9);
             z-index: 50;
@@ -503,31 +505,157 @@
             box-shadow: 0 0 80px rgba(254, 44, 85, 1);
         }
         .cel-avatar {
-            width: 64px;
-            height: 64px;
+            width: 78px;
+            height: 78px;
             border-radius: 50%;
             border: 3px solid #fff;
             object-fit: cover;
             box-shadow: 0 0 16px rgba(0,0,0,0.5);
         }
         .cel-text-box h2 {
-            font-size: 24px;
+            font-size: 30px;
             font-weight: 900;
             color: #ffffff;
             white-space: nowrap;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         .cel-text-box p {
-            font-size: 19px;
+            font-size: 23px;
             font-weight: 800;
             color: #fef08a;
             white-space: nowrap;
         }
 
-        /* 5. FOOTER SAFE ZONE CHAT TIKTOK (~310px) CON LEADERBOARD E FEED */
+        /* ===== SPOTLIGHT DEL DONATORE (TAKEOVER ARENA + CORIANDOLI) ===== */
+        #donorSpotlight {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 42%, rgba(60, 15, 30, 0.55) 0%, rgba(12, 2, 8, 0.88) 78%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 70;
+            transition: opacity 0.3s ease;
+            overflow: hidden;
+        }
+        #donorSpotlight.active {
+            opacity: 1;
+        }
+        .spot-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transform: scale(0.55);
+            transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.35);
+        }
+        #donorSpotlight.active .spot-card {
+            transform: scale(1);
+        }
+        .spot-ring {
+            position: relative;
+            width: 216px;
+            height: 216px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: conic-gradient(#facc15, #fe2c55, #a855f7, #facc15, #fef08a, #facc15);
+            animation: spot-ring-spin 2.2s linear infinite;
+            box-shadow: 0 0 70px rgba(250, 204, 21, 0.85), 0 0 130px rgba(254, 44, 85, 0.45);
+        }
+        .spot-ring::before {
+            content: '';
+            position: absolute;
+            inset: 7px;
+            border-radius: 50%;
+            background: #160510;
+        }
+        .spot-ring img {
+            position: relative;
+            width: 186px;
+            height: 186px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #fef08a;
+            background: #3b1220;
+        }
+        @keyframes spot-ring-spin {
+            to { transform: rotate(360deg); }
+        }
+        #donorSpotlight.tier-mega .spot-ring {
+            box-shadow: 0 0 80px rgba(168, 85, 247, 0.9), 0 0 140px rgba(250, 204, 21, 0.5);
+        }
+        #donorSpotlight.tier-jackpot .spot-ring {
+            animation-duration: 1.1s;
+            box-shadow: 0 0 100px rgba(254, 44, 85, 1), 0 0 170px rgba(250, 204, 21, 0.8);
+        }
+        .spot-name {
+            font-size: 52px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(250, 204, 21, 0.9), 0 3px 8px rgba(0,0,0,0.9);
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .spot-pts {
+            font-size: 40px;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fef08a;
+            text-shadow: 0 0 24px rgba(250, 204, 21, 0.9), 0 3px 6px rgba(0,0,0,0.8);
+        }
+        .spot-tier-badge {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 7px 26px;
+            border-radius: 999px;
+            border: 2.5px solid #fef08a;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.9), rgba(220, 38, 38, 0.9));
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+            box-shadow: 0 0 30px rgba(250, 204, 21, 0.7);
+        }
+        #donorSpotlight.tier-mega .spot-tier-badge {
+            border-color: #e9d5ff;
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.92), rgba(219, 39, 119, 0.92));
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
+        }
+        #donorSpotlight.tier-jackpot .spot-tier-badge {
+            border-color: #ffffff;
+            background: linear-gradient(135deg, #fe2c55, #a855f7, #f59e0b);
+            box-shadow: 0 0 44px rgba(254, 44, 85, 0.95);
+        }
+        .spot-confetti {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .spot-confetti i {
+            position: absolute;
+            top: -40px;
+            display: block;
+            border-radius: 2px;
+            animation: confetti-fall linear infinite;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translateY(1400px) rotate(720deg); opacity: 0; }
+        }
+
+        /* 5. FOOTER SAFE ZONE CHAT TIKTOK (~340px) CON LEADERBOARD E FEED */
         .bottom-suite {
-            height: 310px;
-            min-height: 310px;
+            height: 340px;
+            min-height: 340px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -543,8 +671,8 @@
         }
 
         .leaderboard-card {
-            background: rgba(15, 23, 42, 0.92);
-            border: 2px solid rgba(234, 179, 8, 0.5);
+            background: var(--panel-bg);
+            border: 2px solid rgba(234, 179, 8, 0.6);
             border-radius: 16px;
             padding: 10px 14px;
             display: flex;
@@ -553,7 +681,7 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
         }
         .lb-title {
-            font-size: 17px;
+            font-size: 21px;
             font-weight: 900;
             color: #facc15;
             display: flex;
@@ -574,7 +702,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 17px;
+            font-size: 20px;
             font-weight: 800;
             font-family: 'JetBrains Mono', monospace;
             padding: 3px 6px;
@@ -591,8 +719,8 @@
         .lb-row.bronze { color: #fdba74; }
 
         .feed-card {
-            background: rgba(15, 23, 42, 0.92);
-            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: var(--panel-bg);
+            border: 2px solid rgba(254, 44, 85, 0.35);
             border-radius: 16px;
             padding: 10px 14px;
             display: flex;
@@ -602,15 +730,15 @@
             overflow: hidden;
         }
         .feed-title {
-            font-size: 17px;
+            font-size: 21px;
             font-weight: 900;
-            color: #38bdf8;
+            color: #fbbf24;
             display: flex;
             align-items: center;
             justify-content: space-between;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            border-bottom: 1px solid rgba(251, 191, 36, 0.3);
             padding-bottom: 4px;
         }
         .feed-list {
@@ -623,12 +751,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 16.5px;
+            font-size: 19px;
             font-weight: 800;
             background: rgba(255, 255, 255, 0.04);
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 8px;
-            border-left: 3px solid #38bdf8;
+            border-left: 3px solid #fb923c;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -640,18 +768,18 @@
 
         /* STATUS BAR SOTTILE CON TELEMETRIA (42px) */
         .bottom-status-bar {
-            height: 42px;
-            background: rgba(10, 15, 30, 0.94);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            height: 48px;
+            background: var(--panel-bg-deep);
+            border: 1.5px solid rgba(250, 204, 21, 0.2);
             border-radius: 12px;
             padding: 0 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
+            font-size: 15.5px;
             font-weight: 800;
-            color: #94a3b8;
+            color: #d8a8b8;
         }
         .status-cell {
             display: flex;
@@ -659,29 +787,29 @@
             gap: 6px;
         }
         .status-label {
-            font-size: 11px;
-            color: #64748b;
+            font-size: 12.5px;
+            color: #b08088;
             letter-spacing: 1px;
         }
-        .status-val.clock { color: #38bdf8; }
+        .status-val.clock { color: #fbbf24; }
         .status-val.bitrate { color: #a855f7; }
         .status-val.fps { color: #10b981; }
         .status-val.bridge { color: #22c55e; display: flex; align-items: center; gap: 4px; }
 
         .audio-toggle-btn {
-            background: rgba(56, 189, 248, 0.15);
-            border: 1.5px solid #38bdf8;
+            background: rgba(251, 191, 36, 0.15);
+            border: 1.5px solid #fbbf24;
             color: #ffffff;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 800;
             cursor: pointer;
             font-family: inherit;
             transition: all 0.2s ease;
         }
         .audio-toggle-btn:hover {
-            background: rgba(56, 189, 248, 0.35);
+            background: rgba(251, 191, 36, 0.35);
         }
     </style>
 </head>
@@ -725,11 +853,13 @@
                     <span>📱 USA LO SMARTPHONE COME WEBCAM 4K 60FPS SU OBS</span>
                     <span>🎙️ TRADUZIONE VOCALE AI IN TEMPO REALE SENZA LAG</span>
                     <span>🚀 SCARICA ORA L'APP SU ANDROBS.COM</span>
+                    <span>🛡️ SALI DI RANGO: CAVALIERE → NOBILE → 👑 RE DELLA LIVE!</span>
                     <span>👑 DONA 1 ROSA PER RUBARE IL TRONO DEL REATTORE!</span>
                     <span>🌐 WWW.ANDROBS.COM</span>
                     <span>📱 USA LO SMARTPHONE COME WEBCAM 4K 60FPS SU OBS</span>
                     <span>🎙️ TRADUZIONE VOCALE AI IN TEMPO REALE SENZA LAG</span>
                     <span>🚀 SCARICA ORA L'APP SU ANDROBS.COM</span>
+                    <span>🛡️ SALI DI RANGO: CAVALIERE → NOBILE → 👑 RE DELLA LIVE!</span>
                     <span>👑 DONA 1 ROSA PER RUBARE IL TRONO DEL REATTORE!</span>
                 </div>
             </div>
@@ -778,6 +908,18 @@
                     <div class="cel-text-box">
                         <h2 id="celTitle">🌹 1 ROSA = METEORA DORATA!</h2>
                         <p id="celSub">@Giocatore conquista il Trono del Reattore!</p>
+                    </div>
+                </div>
+
+                <!-- SPOTLIGHT DEL DONATORE: takeover a tutta arena che mette
+                     la foto del donatore al centro come la star della live -->
+                <div id="donorSpotlight">
+                    <div class="spot-confetti" id="spotConfetti"></div>
+                    <div class="spot-card">
+                        <div class="spot-ring"><img id="spotAvatar" src="" alt="Foto del donatore"></div>
+                        <div class="spot-name" id="spotName">@Donatore</div>
+                        <div class="spot-pts" id="spotPts">+0 PT</div>
+                        <div class="spot-tier-badge" id="spotTierBadge">🌹 Rosa</div>
                     </div>
                 </div>
             </div>
@@ -1267,6 +1409,93 @@
             }, item.holdMs);
         }
 
+        /* ===== SPOTLIGHT DEL DONATORE =====
+           A ogni regalo la foto del donatore occupa tutta l'arena: cornice
+           d'oro rotante, nome gigante, punti, coriandoli. Chi dona diventa
+           la star della live per alcuni secondi — è il meccanismo che
+           gratifica e spinge gli altri a donare. In coda come i banner. */
+        const spotlightQueue = [];
+        let spotlightShowing = false;
+
+        const SPOT_TIER_STYLE = {
+            rose:    { cls: '',              badge: '🌹 ROSA!',           holdMs: 3600 },
+            mega:    { cls: 'tier-mega',     badge: '💥 MEGA REGALO!',    holdMs: 4400 },
+            jackpot: { cls: 'tier-jackpot',  badge: '💎 JACKPOT SUPREMO!', holdMs: 5200 }
+        };
+
+        function showDonorSpotlight(user, avatar, pts, tier) {
+            spotlightQueue.push({ user, avatar, pts, tier });
+            pumpSpotlightQueue();
+        }
+
+        function pumpSpotlightQueue() {
+            if (spotlightShowing || spotlightQueue.length === 0) return;
+            spotlightShowing = true;
+            const item = spotlightQueue.shift();
+            const style = SPOT_TIER_STYLE[item.tier] || SPOT_TIER_STYLE.rose;
+
+            const spot = document.getElementById('donorSpotlight');
+            spot.className = item.tier && item.tier !== 'rose' ? style.cls : '';
+            document.getElementById('spotAvatar').src =
+                item.avatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='186' height='186'><rect width='186' height='186' fill='%23facc15'/><text x='93' y='116' font-size='90' text-anchor='middle'>👑</text></svg>";
+            document.getElementById('spotName').textContent = '@' + item.user;
+            document.getElementById('spotPts').textContent = `+${item.pts.toLocaleString('it-IT')} PT`;
+            document.getElementById('spotTierBadge').textContent = style.badge;
+
+            spawnSpotConfetti();
+            spot.classList.add('active');
+
+            setTimeout(() => {
+                spot.classList.remove('active');
+                setTimeout(() => {
+                    spotlightShowing = false;
+                    pumpSpotlightQueue();
+                }, 400);
+            }, style.holdMs);
+        }
+
+        function spawnSpotConfetti() {
+            const container = document.getElementById('spotConfetti');
+            const colors = ['#facc15', '#fe2c55', '#a855f7', '#fbbf24', '#ffffff', '#fdba74', '#fef08a'];
+            container.innerHTML = '';
+            for (let i = 0; i < 34; i++) {
+                const c = document.createElement('i');
+                c.style.left = (Math.random() * 100) + '%';
+                c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                c.style.width = (7 + Math.random() * 9) + 'px';
+                c.style.height = (12 + Math.random() * 16) + 'px';
+                c.style.animationDelay = (Math.random() * 1.1) + 's';
+                c.style.animationDuration = (1.7 + Math.random() * 1.5) + 's';
+                container.appendChild(c);
+            }
+        }
+
+        /* ===== SISTEMA DI RANGO A 3 LIVELLI =====
+           I punti accumulati nella live fanno salire di rango:
+           🛡️ CAVALIERE → ⚔️ NOBILE → 👑 RE/REGINA.
+           Il badge compare in classifica e ogni promozione viene celebrata. */
+        const PRESTIGE_TIERS = [
+            { min: 15000, icon: '👑', name: 'RE / REGINA' },
+            { min: 4000,  icon: '⚔️', name: 'NOBILE' },
+            { min: 0,     icon: '🛡️', name: 'CAVALIERE' }
+        ];
+
+        function getPrestigeTier(score) {
+            for (const t of PRESTIGE_TIERS) {
+                if (score >= t.min) return t;
+            }
+            return PRESTIGE_TIERS[PRESTIGE_TIERS.length - 1];
+        }
+
+        function toRoman(n) {
+            const table = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+            return table[Math.min(Math.max(n, 1), 10) - 1];
+        }
+
+        // Conta quante volte lo stesso utente ha conquistato il trono:
+        // restare Re ripetutamente merita un titolo crescente (Re II, III...)
+        const reignCounts = {};
+
         function updateChaosUI() {
             const fill = document.getElementById('chaosFill');
             const text = document.getElementById('chaosTextVal');
@@ -1307,12 +1536,12 @@
 
         // 6 BUMPER NEON FLIPPER ATTORNO AL NUCLEO
         const bumpers = [
-            { x: LOGICAL_W * 0.24, y: LOGICAL_H * 0.28, radius: 46, color: '#06b6d4', scale: 1, pitch: 0, shockwaves: [] },
+            { x: LOGICAL_W * 0.24, y: LOGICAL_H * 0.28, radius: 46, color: '#f59e0b', scale: 1, pitch: 0, shockwaves: [] },
             { x: LOGICAL_W * 0.76, y: LOGICAL_H * 0.28, radius: 46, color: '#a855f7', scale: 1, pitch: 2, shockwaves: [] },
             { x: LOGICAL_W * 0.16, y: LOGICAL_H * 0.50, radius: 44, color: '#facc15', scale: 1, pitch: 4, shockwaves: [] },
             { x: LOGICAL_W * 0.84, y: LOGICAL_H * 0.50, radius: 44, color: '#fe2c55', scale: 1, pitch: 5, shockwaves: [] },
             { x: LOGICAL_W * 0.28, y: LOGICAL_H * 0.74, radius: 46, color: '#10b981', scale: 1, pitch: 7, shockwaves: [] },
-            { x: LOGICAL_W * 0.72, y: LOGICAL_H * 0.74, radius: 46, color: '#38bdf8', scale: 1, pitch: 8, shockwaves: [] }
+            { x: LOGICAL_W * 0.72, y: LOGICAL_H * 0.74, radius: 46, color: '#fb923c', scale: 1, pitch: 8, shockwaves: [] }
         ];
 
         // 2 GIRANDOLE LASER LATERALI
@@ -1414,8 +1643,8 @@
                         this.vx = (Math.random() - 0.5) * 14;
                         this.bounces++;
                         playBumperChime(6, 1.2);
-                        spawnImpactParticles(this.x, this.y, '#38bdf8', 10);
-                        addFloatingText("+200 KICK!", this.x, this.y - 20, '#38bdf8');
+                        spawnImpactParticles(this.x, this.y, '#fbbf24', 10);
+                        addFloatingText("+200 KICK!", this.x, this.y - 20, '#fbbf24');
                     }
                 }
 
@@ -1497,7 +1726,7 @@
         }
 
         function getRandomColorForUser(name) {
-            const colors = ['#06b6d4', '#3b82f6', '#a855f7', '#ec4899', '#10b981', '#f59e0b', '#38bdf8'];
+            const colors = ['#f59e0b', '#f97316', '#a855f7', '#ec4899', '#f43f5e', '#facc15', '#fb923c'];
             let hash = 0;
             for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
             return colors[Math.abs(hash) % colors.length];
@@ -1700,16 +1929,32 @@
             currentKing.avatar = avatar;
             reactorThrone.shieldHp = reactorThrone.maxShieldHp;
 
+            // Se lo stesso utente riprende il trono più volte nella stessa
+            // live, il titolo cresce: Re II, Re III... — difendere il regno
+            // diventa una sfida a sé che spinge a donare ancora.
+            reignCounts[user] = (reignCounts[user] || 0) + 1;
+            const reign = reignCounts[user];
+
             playRoseFanfareDopamine();
             spawnImpactParticles(reactorThrone.x, reactorThrone.y, '#facc15', 50);
 
-            showCelebrationBanner(
-                `👑 NUOVO RE DELLA LIVE!`,
-                `@${user} conquista il Trono del Reattore!`,
-                avatar
-            );
+            if (reign > 1) {
+                showCelebrationBanner(
+                    `👑 RE ${toRoman(reign)} DELLA LIVE!`,
+                    `@${user} conquista il trono per la ${reign}ª volta!`,
+                    avatar,
+                    true
+                );
+                addFeedLine("👑", user, `incoronato Re ${toRoman(reign)} della Live!`, true);
+            } else {
+                showCelebrationBanner(
+                    `👑 NUOVO RE DELLA LIVE!`,
+                    `@${user} conquista il Trono del Reattore!`,
+                    avatar
+                );
+                addFeedLine("👑", user, "espugna il Trono del Reattore!");
+            }
 
-            addFeedLine("👑", user, "espugna il Trono del Reattore!");
             addScore(user, 2000);
             addChaos(30);
         }
@@ -1805,7 +2050,7 @@
 
         function drawCyberGrid() {
             ctx.save();
-            ctx.strokeStyle = isSupernovaActive ? 'rgba(254, 44, 85, 0.12)' : 'rgba(6, 182, 212, 0.08)';
+            ctx.strokeStyle = isSupernovaActive ? 'rgba(254, 44, 85, 0.12)' : 'rgba(245, 158, 11, 0.08)';
             ctx.lineWidth = 1.5;
 
             // Raggi circolari concentrici dal centro
@@ -1915,9 +2160,9 @@
 
         function drawBottomKickers() {
             ctx.save();
-            ctx.strokeStyle = '#38bdf8';
+            ctx.strokeStyle = '#fbbf24';
             ctx.lineWidth = 8;
-            ctx.shadowColor = '#06b6d4';
+            ctx.shadowColor = '#f59e0b';
             ctx.shadowBlur = 18;
             ctx.lineCap = 'round';
 
@@ -2090,7 +2335,24 @@
         };
 
         function addScore(user, points) {
+            const before = getPrestigeTier(userScores[user] || 0);
             userScores[user] = (userScores[user] || 0) + points;
+            const after = getPrestigeTier(userScores[user]);
+
+            // PROMOZIONE DI RANGO: superata una soglia, festeggiamo in grande —
+            // salire da Cavaliere a Nobile o diventare Re/Regina è il momento
+            // che lo spettatore vuole mostrare agli altri.
+            if (after.min > before.min) {
+                showCelebrationBanner(
+                    `🎖️ PROMOZIONE A ${after.name}!`,
+                    `@${user} sale di rango nella Live!`,
+                    '',
+                    after.min >= 15000,
+                    4200
+                );
+                addFeedLine('🎖️', user, `promosso a ${after.name}!`, true);
+                playBumperChime(8, 1.3);
+            }
             updateLeaderboardUI();
         }
 
@@ -2105,7 +2367,8 @@
             listEl.innerHTML = sorted.map((s, idx) => {
                 const isRankClass = classes[idx] ? ` ${classes[idx]}` : "";
                 const uDisplay = s[0].startsWith('@') ? s[0] : '@' + s[0];
-                return `<div class="lb-row${isRankClass}"><span>${ranks[idx]} ${uDisplay}</span><span>${s[1].toLocaleString()} pt</span></div>`;
+                const tier = getPrestigeTier(s[1]);
+                return `<div class="lb-row${isRankClass}"><span>${ranks[idx]} ${tier.icon} ${uDisplay}</span><span>${s[1].toLocaleString()} pt</span></div>`;
             }).join('');
         }
 
@@ -2319,7 +2582,13 @@
                 }
 
                 announceGiftVoice(feedName, giftName, tier);
-                showCelebrationBanner(bannerTitle, bannerSub, avatar, tier !== 'rose');
+                // Il donatore diventa la star: foto gigante, nome enorme,
+                // coriandoli. Il banner piccolo resta per re/obiettivo/rangi.
+                const giftPts = scoreGain * (tier === 'rose' ? count : 1);
+                showDonorSpotlight(u, avatar, giftPts, tier);
+                if (tier !== 'rose') {
+                    showCelebrationBanner(bannerTitle, bannerSub, avatar, true);
+                }
 
                 // 4. Sgancia la METEORA DORATA GIGANTE con la faccia del donatore
                 spawnBall(u, true, avatar, true, meteorScale);
@@ -2332,8 +2601,8 @@
                 }
 
                 // 6. Punteggio, Caos e avanzamento Obiettivo Regali
-                addScore(u, scoreGain * (tier === 'rose' ? count : 1));
-                addFeedLine(feedIcon, feedName, `dona ${count}x ${giftName}! +${scoreGain * (tier === 'rose' ? count : 1)} pt`, true);
+                addScore(u, giftPts);
+                addFeedLine(feedIcon, feedName, `dona ${count}x ${giftName}! +${giftPts} pt`, true);
                 addChaos(chaosGain);
                 addGiftGoalProgress(giftValue);
 
@@ -2451,6 +2720,7 @@
 
                 addScore(u, 1000);
                 addFeedLine("🌹", u, "dona 1 Rosa! Meteora Dorata!", true);
+                showDonorSpotlight(u, '', 1000, 'rose');
                 addChaos(40);
             }
             setTimeout(scheduleAutonomousRoseSurge, 48000 + Math.random() * 12000);
