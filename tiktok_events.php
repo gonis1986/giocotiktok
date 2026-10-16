@@ -21,6 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Token di autenticazione sicuro tra demone Python e backend web
 $secret_token = getenv('ANDROBS_BRIDGE_TOKEN') ?: 'YOUR_SECURE_BRIDGE_TOKEN_HERE';
 
+// Chiave opzionale per autorizzare il cambio di streamer target via GET
+// (?target=NOME&key=CHIAVE). Se non impostata, il cambio resta aperto come
+// prima; se impostata, chiunque indovini l'endpoint non può più dirottare
+// la stanza monitorata dal bridge in mezzo alla live.
+$panel_key = getenv('ANDROBS_PANEL_KEY') ?: '';
+
 $data_dir = __DIR__ . '/tiktok_data';
 if (!is_dir($data_dir)) {
     @mkdir($data_dir, 0755, true);
@@ -88,14 +94,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             foreach ($events_to_add as $ev) {
                 $data['last_id']++;
+
+                // Avatar: accetta solo URL http/https assoluti
+                $avatar_url = '';
+                $raw_avatar = $ev['avatar'] ?? '';
+                if (is_string($raw_avatar) && filter_var($raw_avatar, FILTER_VALIDATE_URL)) {
+                    $scheme = strtolower(parse_url($raw_avatar, PHP_URL_SCHEME) ?: '');
+                    if ($scheme === 'http' || $scheme === 'https') {
+                        $avatar_url = $raw_avatar;
+                    }
+                }
+
                 $new_event = [
                     'id' => $data['last_id'],
                     'type' => $ev['type'] ?? 'join',
                     'user' => preg_replace('/[^a-zA-Z0-9_\.]/', '', str_replace('@', '', $ev['user'] ?? 'spettatore')),
-                    'avatar' => filter_var($ev['avatar'] ?? '', FILTER_VALIDATE_URL) ? $ev['avatar'] : '',
+                    'nickname' => htmlspecialchars(substr($ev['nickname'] ?? '', 0, 50), ENT_QUOTES, 'UTF-8'),
+                    'avatar' => $avatar_url,
                     'text' => htmlspecialchars(substr($ev['text'] ?? '', 0, 100), ENT_QUOTES, 'UTF-8'),
                     'giftName' => htmlspecialchars($ev['giftName'] ?? '', ENT_QUOTES, 'UTF-8'),
                     'repeatCount' => (int)($ev['repeatCount'] ?? 1),
+                    'giftValue' => max(0, (int)($ev['giftValue'] ?? 0)),
                     'timestamp' => time()
                 ];
                 $data['events'][] = $new_event;
@@ -124,9 +143,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // -----------------------------------------------------------------------------
 $target_info = json_decode(@file_get_contents($target_file), true) ?: ['user' => 'androbs_official'];
 
-// Se da browser viene passato ?target=USERNAME, aggiorna direttamente
+// Se da browser viene passato ?target=USERNAME, aggiorna direttamente.
+// Con ANDROBS_PANEL_KEY impostata richiede anche &key=CHIAVE per evitare che
+// chiunque scopra l'endpoint possa dirottare la stanza monitorata.
 if (!empty($_GET['target'])) {
+    if ($panel_key !== '' && ($_GET['key'] ?? '') !== $panel_key) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Chiave pannello mancante o errata']);
+        exit;
+    }
     $user = preg_replace('/[^a-zA-Z0-9_\.]/', '', str_replace('@', '', $_GET['target']));
+    if ($user === '') {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Username non valido']);
+        exit;
+    }
     file_put_contents($target_file, json_encode([
         'user' => $user,
         'updated_at' => time()

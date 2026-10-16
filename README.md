@@ -87,6 +87,23 @@ Il gioco fonde le meccaniche di **Flipper Neon (Pinball) + Plinko + Re del Reatt
   - L'arena si accende di rosso e oro elettrico.
   - Per 8 secondi si attiva un **Vortice Gravitazionale (Buco Nero)** al centro: le sfere orbitano a spirale ad altissima velocità, si generano scariche di fulmini al neon tra le palline, e i punti di tutti i Bumper salgono a **`x10 JACKPOT`** con una pioggia di 12 sfere esplosive!
 
+### Celebrazioni Scalate sul Valore del Regalo (diamanti)
+Il bridge legge il `diamond_count` reale di ogni regalo TikTok: più il regalo vale, più lo spettacolo è enorme — è il meccanismo che spinge a donare regali più grandi.
+
+| Valore totale | Livello | Effetto |
+|---|---|---|
+| 1 – 19 💎 | 🌹 Rosa | Meteora dorata + conquista del Trono + 6 sfere dorate |
+| 20 – 99 💎 | 💥 Mega Regalo | Meteora gigante + 9 sfere dorate + caos +70% |
+| ≥ 100 💎 | 💎 Jackpot Supremo | Meteora enorme + 12 sfere dorate + caos 100% + Supernova immediata |
+
+I regali "combo/streak" di TikTok vengono conteggiati una sola volta alla fine della serie (non ad ogni tick), quindi il punteggio e gli effetti corrispondono al valore reale donato.
+
+### Barra Obiettivo Regali (`?goal=DIAMANTI`)
+Aprendo l'overlay con `?goal=100` compare una seconda barra dorata **OBIETTIVO REGALI** che si riempie ad ogni donazione in base ai diamanti ricevuti. Al raggiungimento: jackpot collettivo (celebrazione + supernova) e la barra riparte da zero. È il classico "gift goal" che mantiene alta la spinta alle donazioni per tutta la live.
+
+### Follow, Condivisioni e Abbonamenti
+Anche gli eventi di crescita generano sfere e righe nel feed: **follow** (+30 pt), **share** (sfera dorata +80 pt — le condivisioni spingono l'algoritmo FYP) e **subscribe** (sfera dorata +500 pt).
+
 ---
 
 ## 🎙️ 4. Sponsorizzazione AndrObs & Speaker Vocale in 4 Lingue
@@ -175,6 +192,13 @@ Anche senza video preregistrato, il brand e il prodotto sono sempre al centro de
    ANDROBS_BACKEND_URL=https://www.tuodominio.com/tiktok_events.php
    ANDROBS_BRIDGE_TOKEN=tua_chiave_segreta_molto_sicura_2026
    ```
+
+   Sul web server (PHP) puoi impostare due variabili d'ambiente:
+   - `ANDROBS_BRIDGE_TOKEN` — obbligatorio, deve coincidere con quello del bridge.
+   - `ANDROBS_PANEL_KEY` — opzionale: se impostata, il cambio di streamer
+     monitorato (`?target=`) richiede anche il parametro `&key=`, così
+     nessun altro può dirottare la stanza seguita dal bridge durante la live.
+     In tal caso apri l'overlay come `tiktok.html?user=IL_TUO_USERNAME&key=LA_CHIAVE`.
 4. Installa il servizio di sistema Systemd:
    ```bash
    cp androbs-tiktok-bridge.service /etc/systemd/system/
@@ -194,7 +218,7 @@ Anche senza video preregistrato, il brand e il prodotto sono sempre al centro de
    export FTP_USER="tuo_utente_ftp"
    export FTP_PASS="tua_password_ftp"
    ```
-2. Esegui lo script di deploy:
+2. Esegui lo script di deploy (tenta prima FTPS cifrato, ricade su FTP solo se il server non lo supporta):
    ```bash
    python deploy_ftp.py
    ```
@@ -204,7 +228,9 @@ Anche senza video preregistrato, il brand e il prodotto sono sempre al centro de
 
 ### C. Aggiunta su OBS Studio / TikTok LIVE Studio
 1. In OBS Studio, aggiungi una fonte **Browser (Browser Source)**.
-2. Imposta l'URL su: `https://www.tuodominio.com/tiktok.html?user=IL_TUO_USERNAME`.
+2. Imposta l'URL su: `https://www.tuodominio.com/tiktok.html?user=IL_TUO_USERNAME`
+   - Aggiungi `&goal=100` per mostrare la barra Obiettivo Regali (in diamanti).
+   - Aggiungi `&key=LA_CHIAVE` se hai impostato `ANDROBS_PANEL_KEY` sul server.
 3. Imposta le dimensioni fisse:
    - **Larghezza (Width):** `1080`
    - **Altezza (Height):** `1920`

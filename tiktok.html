@@ -341,6 +341,49 @@
             border: 1px solid rgba(255, 255, 255, 0.25);
         }
 
+        /* BARRA OBIETTIVO REGALI (DIAMANTI) - attivata con ?goal=N */
+        .goal-meter-container {
+            height: 38px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid rgba(250, 204, 21, 0.45);
+            border-radius: 12px;
+            padding: 3px 6px;
+            position: relative;
+            display: none;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+        }
+        .goal-meter-container.visible {
+            display: flex;
+        }
+        .goal-meter-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            background: linear-gradient(90deg, #b45309 0%, #facc15 60%, #fef08a 100%);
+            border-radius: 9px;
+            transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.7);
+        }
+        .goal-meter-label {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
         .rules-bar {
             height: 32px;
             display: flex;
@@ -364,12 +407,12 @@
             font-weight: 900;
         }
 
-        /* 4. ARENA CANVAS HD 60 FPS (~1380px DI ALTEZZA / >72% SCHERMO) */
+        /* 4. ARENA CANVAS HD 60 FPS (occupa tutto lo spazio residuo dello stage) */
         .arena-zone {
             position: relative;
             width: 100%;
-            height: 1380px;
-            min-height: 1380px;
+            flex: 1;
+            min-height: 0;
             border-radius: 22px;
             border: 2px solid rgba(6, 182, 212, 0.5);
             box-shadow: 0 0 40px rgba(6, 182, 212, 0.25);
@@ -705,6 +748,14 @@
                     <span>💬 <b class="highlight">Chat</b> = Sfera Turbo x2 (+4%)</span>
                     <span>🌹 <b class="rose">1 Rosa</b> = METEORA DORATA + RUBA TRONO! (+40%)</span>
                     <span>🌪️ <b class="highlight">80%+</b> = SUPERNOVA VORTEX</span>
+                </div>
+                <!-- BARRA OBIETTIVO REGALI (visibile solo con ?goal=DIAMANTI) -->
+                <div class="goal-meter-container" id="goalMeterContainer">
+                    <div class="goal-meter-fill" id="goalFill"></div>
+                    <div class="goal-meter-label">
+                        <span>💎 OBIETTIVO REGALI</span>
+                        <span class="chaos-state-badge" id="goalTextVal">0/0</span>
+                    </div>
                 </div>
             </div>
 
@@ -1088,9 +1139,17 @@
             }
         }
 
-        function announceGiftVoice(user, giftName) {
+        function announceGiftVoice(user, giftName, tier = 'rose') {
             isSpeakingAnnouncement = true;
-            const text = `Incredibile! ${user} ha donato ${giftName}! Il Trono del Reattore è suo!`;
+            const cleanUser = decodeEntities(user);
+            let text;
+            if (tier === 'jackpot') {
+                text = `JACKPOT SUPREMO! ${cleanUser} ha incendiato l'arena con ${giftName}!`;
+            } else if (tier === 'mega') {
+                text = `Mega regalo pazzesco! ${cleanUser} ha donato ${giftName}!`;
+            } else {
+                text = `Incredibile! ${cleanUser} ha donato ${giftName}! Il Trono del Reattore è suo!`;
+            }
             speakVoiceWithLang(text, 'it-IT', () => {
                 isSpeakingAnnouncement = false;
             });
@@ -1117,7 +1176,9 @@
             const dpr = Math.max(1, window.devicePixelRatio || 1);
             canvas.width = LOGICAL_W * dpr;
             canvas.height = LOGICAL_H * dpr;
-            ctx.scale(dpr, dpr);
+            // setTransform (non ctx.scale): altrimenti ogni resize moltiplica
+            // la trasformazione precedente deformando progressivamente il canvas
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         resizeCanvasDpr();
         window.addEventListener('resize', resizeCanvasDpr);
@@ -1147,6 +1208,39 @@
                     spawnBall(currentKing.user, true, currentKing.avatar);
                 }, i * 90);
             }
+        }
+
+        // Decodifica entità HTML (il backend escapa i testi anti-XSS):
+        // serve per le stringhe disegnate sul canvas e lette dal TTS, dove
+        // le entità non vengono interpretate dal browser
+        const entityDecoder = document.createElement('textarea');
+        function decodeEntities(s) {
+            if (!s || s.indexOf('&') === -1) return s || '';
+            entityDecoder.innerHTML = s;
+            return entityDecoder.value;
+        }
+
+        // Throttling spawn per singolo utente: evita che una valanga di
+        // like/chat dello stesso spettatore saturi l'arena (e i 60 FPS)
+        const lastBallByUser = {};
+        function canSpawnFor(user, minIntervalMs = 8000) {
+            const now = Date.now();
+            if (now - (lastBallByUser[user] || 0) < minIntervalMs) return false;
+            lastBallByUser[user] = now;
+            return true;
+        }
+
+        // Mostra il banner celebrazione in cima all'arena
+        function showCelebrationBanner(title, sub, avatar, isSuper = false) {
+            const banner = document.getElementById('celebrationBanner');
+            document.getElementById('celTitle').textContent = title;
+            document.getElementById('celSub').textContent = sub;
+            if (avatar) {
+                document.getElementById('celAvatar').src = avatar;
+            }
+            banner.classList.toggle('supernova', isSuper);
+            banner.classList.add('active');
+            setTimeout(() => banner.classList.remove('active'), 3800);
         }
 
         function updateChaosUI() {
@@ -1224,12 +1318,12 @@
         }
 
         class Ball {
-            constructor(user, isGold = false, avatar = '', isMeteor = false) {
+            constructor(user, isGold = false, avatar = '', isMeteor = false, meteorScale = 1.0) {
                 this.user = user || "Spettatore";
                 this.isGold = isGold;
                 this.isMeteor = isMeteor;
                 this.avatar = avatar;
-                this.radius = isMeteor ? 58 : (isGold ? 36 : 28);
+                this.radius = isMeteor ? Math.round(58 * meteorScale) : (isGold ? 36 : 28);
                 this.x = isMeteor ? LOGICAL_W / 2 : (LOGICAL_W * 0.2 + Math.random() * (LOGICAL_W * 0.6));
                 this.y = isMeteor ? -60 : 40;
                 this.vx = (Math.random() - 0.5) * 8;
@@ -1245,31 +1339,37 @@
 
             update(dt) {
                 this.lifeTime += dt;
+                // Step normalizzato sul frame-rate (1.0 a 60 FPS): rende la
+                // fisica identica su display a 30/120/144 Hz invece di
+                // accelerare con il refresh dello schermo
+                const step = dt * 60;
 
                 // Gravità normale o Vortice Buco Nero durante Supernova
                 if (isSupernovaActive) {
                     const dx = reactorThrone.x - this.x;
                     const dy = reactorThrone.y - this.y;
                     const dist = Math.hypot(dx, dy) || 1;
-                    const force = 340 / (dist + 50);
+                    const force = (340 / (dist + 50)) * step;
                     // Forza centripeta con rotazione tangenziale
                     this.vx += (dx / dist) * force * 1.4 - (dy / dist) * force * 0.8;
                     this.vy += (dy / dist) * force * 1.4 + (dx / dist) * force * 0.8;
                 } else {
-                    this.vy += 0.32; // Gravità 2D naturale costante
+                    this.vy += 0.32 * step; // Gravità 2D naturale costante
                 }
 
-                this.x += this.vx;
-                this.y += this.vy;
+                this.x += this.vx * step;
+                this.y += this.vy * step;
 
                 // Attrito leggero dell'aria
-                this.vx *= 0.994;
-                this.vy *= 0.994;
+                const drag = Math.pow(0.994, step);
+                this.vx *= drag;
+                this.vy *= drag;
 
                 // Motion Trail (fino a 12 posizioni)
                 this.trail.push({ x: this.x, y: this.y, alpha: 1.0 });
                 if (this.trail.length > 12) this.trail.shift();
-                this.trail.forEach(t => t.alpha *= 0.88);
+                const trailFade = Math.pow(0.88, step);
+                this.trail.forEach(t => t.alpha *= trailFade);
 
                 // Collisione Bordi Arena
                 if (this.x - this.radius < 18) {
@@ -1379,11 +1479,11 @@
             return colors[Math.abs(hash) % colors.length];
         }
 
-        function spawnBall(user, isGold = false, avatar = '', isMeteor = false) {
+        function spawnBall(user, isGold = false, avatar = '', isMeteor = false, meteorScale = 1.0) {
             if (balls.length > 28) {
                 balls.shift(); // Evita saturazione array mantenendo 60 FPS
             }
-            const ball = new Ball(user, isGold, avatar, isMeteor);
+            const ball = new Ball(user, isGold, avatar, isMeteor, meteorScale);
             balls.push(ball);
             updateActiveBallsBadge();
             return ball;
@@ -1477,12 +1577,13 @@
                     spawnImpactParticles(b.x, b.y, '#facc15', 18);
                     playBumperChime(9, 1.4);
 
-                    // Se è la METEORA DORATA della Rosa: Incoronazione Immediata!
+                    // Se è la METEORA DORATA di un regalo: Incoronazione Immediata!
                     if (b.isMeteor) {
                         crownNewKing(b.user, b.avatar);
                         addFloatingText("👑 NUOVO RE!", reactorThrone.x, reactorThrone.y - 90, '#fef08a');
-                    } else {
-                        // Riduce lo scudo del Re
+                    } else if (b.user !== currentKing.user) {
+                        // Solo le sfere degli ALTRI giocatori riducono lo scudo:
+                        // quelle del Re rimbalzano via senza auto-espugnarsi
                         reactorThrone.shieldHp -= 15;
                         addFloatingText("-15 SCUDO!", b.x, b.y - 20, '#ef4444');
 
@@ -1494,7 +1595,47 @@
                     }
                 }
 
-                // 3. COLLISIONI PALLA CONTRO PALLA (ELASTICHE 2D)
+                // 4. COLLISIONE CON LE GIRANDOLE LASER ROTANTI
+                laserSpinners.forEach(sp => {
+                    for (const armDir of [0, Math.PI]) {
+                        const ax = sp.x;
+                        const ay = sp.y;
+                        const bx = sp.x + Math.cos(sp.angle + armDir) * sp.length;
+                        const by = sp.y + Math.sin(sp.angle + armDir) * sp.length;
+
+                        // Punto più vicino al centro della sfera sul segmento del braccio
+                        const segDx = bx - ax;
+                        const segDy = by - ay;
+                        const segLenSq = segDx * segDx + segDy * segDy || 1;
+                        let t = ((b.x - ax) * segDx + (b.y - ay) * segDy) / segLenSq;
+                        t = Math.max(0, Math.min(1, t));
+                        const px = ax + segDx * t;
+                        const py = ay + segDy * t;
+
+                        const ldx = b.x - px;
+                        const ldy = b.y - py;
+                        const lDist = Math.hypot(ldx, ldy);
+                        const lMinDist = b.radius + 6;
+
+                        if (lDist < lMinDist && lDist > 0) {
+                            const nx = ldx / lDist;
+                            const ny = ldy / lDist;
+                            b.x = px + nx * (lMinDist + 1);
+
+                            // Riflessione + spinta tangenziale nella direzione di rotazione
+                            const dot = b.vx * nx + b.vy * ny;
+                            b.vx = (b.vx - 2 * dot * nx) * 1.15;
+                            b.vy = (b.vy - 2 * dot * ny) * 1.15;
+                            b.vx += -ny * sp.speed * 160;
+                            b.vy += nx * sp.speed * 160;
+
+                            playPopSound(500);
+                            spawnImpactParticles(b.x, b.y, '#a855f7', 6);
+                        }
+                    }
+                });
+
+                // 5. COLLISIONI PALLA CONTRO PALLA (ELASTICHE 2D)
                 for (let j = i + 1; j < balls.length; j++) {
                     const b2 = balls[j];
                     const bdx = b2.x - b.x;
@@ -1538,15 +1679,11 @@
             playRoseFanfareDopamine();
             spawnImpactParticles(reactorThrone.x, reactorThrone.y, '#facc15', 50);
 
-            // Aggiorna banner celebrazione
-            const banner = document.getElementById('celebrationBanner');
-            document.getElementById('celTitle').textContent = `👑 NUOVO RE DELLA LIVE!`;
-            document.getElementById('celSub').textContent = `@${user} conquista il Trono del Reattore!`;
-            if (avatar) {
-                document.getElementById('celAvatar').src = avatar;
-            }
-            banner.classList.add('active');
-            setTimeout(() => banner.classList.remove('active'), 3800);
+            showCelebrationBanner(
+                `👑 NUOVO RE DELLA LIVE!`,
+                `@${user} conquista il Trono del Reattore!`,
+                avatar
+            );
 
             addFeedLine("👑", user, "espugna il Trono del Reattore!");
             addScore(user, 2000);
@@ -1612,7 +1749,10 @@
             // 2. Disegna 6 Bumper Flipper al Neon
             drawBumpers(dt);
 
-            // 3. Disegna Respingenti Slingshot Inferiori
+            // 3. Disegna Girandole Laser Rotanti
+            drawLaserSpinners(dt);
+
+            // 4. Disegna Respingenti Slingshot Inferiori
             drawBottomKickers();
 
             // 4. Disegna Il Trono del Reattore (Centro)
@@ -1634,7 +1774,7 @@
             drawParticles(dt);
 
             // 7. Aggiorna e Disegna Testi Fluttuanti (+500!, JACKPOT!)
-            drawFloatingTexts();
+            drawFloatingTexts(dt);
 
             requestAnimationFrame(renderReactorScene);
         }
@@ -1661,10 +1801,44 @@
             ctx.restore();
         }
 
+        function drawLaserSpinners(dt) {
+            const step = dt * 60;
+            laserSpinners.forEach(sp => {
+                sp.angle += sp.speed * step;
+
+                ctx.save();
+                ctx.translate(sp.x, sp.y);
+
+                // Due bracci laser opposti con bagliore viola
+                for (const armDir of [0, Math.PI]) {
+                    const ex = Math.cos(sp.angle + armDir) * sp.length;
+                    const ey = Math.sin(sp.angle + armDir) * sp.length;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(ex, ey);
+                    ctx.strokeStyle = '#a855f7';
+                    ctx.lineWidth = 7;
+                    ctx.lineCap = 'round';
+                    ctx.shadowColor = '#a855f7';
+                    ctx.shadowBlur = 18;
+                    ctx.stroke();
+                }
+
+                // Perno centrale della girandola
+                ctx.beginPath();
+                ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#e9d5ff';
+                ctx.fill();
+
+                ctx.restore();
+            });
+        }
+
         function drawBumpers(dt) {
+            const step = dt * 60;
             bumpers.forEach(bm => {
                 // Spring back animation
-                bm.scale += (1 - bm.scale) * 0.12;
+                bm.scale += (1 - bm.scale) * Math.min(1, 0.12 * step);
 
                 ctx.save();
                 ctx.translate(bm.x, bm.y);
@@ -1700,8 +1874,8 @@
                 // Disegna shockwaves concentriche
                 for (let s = bm.shockwaves.length - 1; s >= 0; s--) {
                     const sw = bm.shockwaves[s];
-                    sw.r += 3.5;
-                    sw.alpha -= 0.04;
+                    sw.r += 3.5 * step;
+                    sw.alpha -= 0.04 * step;
                     ctx.save();
                     ctx.beginPath();
                     ctx.arc(bm.x, bm.y, sw.r, 0, Math.PI * 2);
@@ -1740,8 +1914,9 @@
         }
 
         function drawReactorThrone(dt) {
-            reactorThrone.shieldAngle += 0.025;
-            reactorThrone.pulse += 0.05;
+            const step = dt * 60;
+            reactorThrone.shieldAngle += 0.025 * step;
+            reactorThrone.pulse += 0.05 * step;
 
             const x = reactorThrone.x;
             const y = reactorThrone.y;
@@ -1830,10 +2005,11 @@
         }
 
         function drawParticles(dt) {
+            const step = dt * 60;
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
+                p.x += p.vx * step;
+                p.y += p.vy * step;
                 p.alpha -= dt / p.life;
 
                 if (p.alpha <= 0) {
@@ -1853,11 +2029,12 @@
             }
         }
 
-        function drawFloatingTexts() {
+        function drawFloatingTexts(dt) {
+            const step = dt * 60;
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 const ft = floatingTexts[i];
-                ft.y += ft.vy;
-                ft.alpha -= 0.022;
+                ft.y += ft.vy * step;
+                ft.alpha -= 0.022 * step;
 
                 if (ft.alpha <= 0) {
                     floatingTexts.splice(i, 1);
@@ -1926,6 +2103,19 @@
            ========================================================================= */
         let lastEventId = 0;
         let lastRealEventTime = 0;
+        let pollInitialized = false;
+
+        function setBridgeStatus(online) {
+            const badge = document.getElementById('bridgeStatusBadge');
+            if (!badge) return;
+            if (online) {
+                badge.style.color = '#22c55e';
+                badge.innerHTML = '<span>●</span> BRIDGE ONLINE';
+            } else {
+                badge.style.color = '#ef4444';
+                badge.innerHTML = '<span>●</span> BRIDGE OFFLINE';
+            }
+        }
 
         function promptChangeTikTokUser() {
             const current = (document.getElementById('targetUserSpan').textContent || '').replace(/^@/, '');
@@ -1936,16 +2126,68 @@
             }
         }
 
+        // Rilevamento iniziale: URL (?user= o ?target=) -> LocalStorage -> Default
+        const urlParams = new URLSearchParams(window.location.search);
+        // Chiave pannello opzionale: necessaria a cambiare lo streamer
+        // monitorato quando sul PHP è impostata ANDROBS_PANEL_KEY
+        const panelKey = urlParams.get('key') || '';
+
         function setNewTikTokTarget(user) {
             if (!user) return;
             const cleaned = user.trim().replace(/^@/, '');
             document.getElementById('targetUserSpan').textContent = `@${cleaned}`;
             try { localStorage.setItem('androbs_tiktok_user', cleaned); } catch (e) {}
-            fetch(`/tiktok_events.php?target=${encodeURIComponent(cleaned)}`).catch(() => {});
+            const keyParam = panelKey ? `&key=${encodeURIComponent(panelKey)}` : '';
+            fetch(`/tiktok_events.php?target=${encodeURIComponent(cleaned)}${keyParam}`).catch(() => {});
         }
 
-        // Rilevamento iniziale: URL (?user= o ?target=) -> LocalStorage -> Default
-        const urlParams = new URLSearchParams(window.location.search);
+        // Barra obiettivo regali: attiva solo con ?goal=NUMERO_DIAMANTI
+        const goalTarget = Math.max(0, parseInt(urlParams.get('goal') || '0', 10) || 0);
+        let goalProgress = 0;
+        if (goalTarget > 0) {
+            document.getElementById('goalMeterContainer').classList.add('visible');
+            updateGoalUI();
+        }
+
+        function updateGoalUI() {
+            if (goalTarget <= 0) return;
+            const pct = Math.min(100, (goalProgress / goalTarget) * 100);
+            document.getElementById('goalFill').style.width = `${pct}%`;
+            document.getElementById('goalTextVal').textContent = `${goalProgress}/${goalTarget} 💎`;
+        }
+
+        function addGiftGoalProgress(diamonds) {
+            if (goalTarget <= 0 || diamonds <= 0) return;
+            goalProgress += diamonds;
+            if (goalProgress >= goalTarget) {
+                // JACKPOT OBIETTIVO: celebrazione enorme e la barra riparte
+                goalProgress = 0;
+                celebrateGoalReached();
+            }
+            updateGoalUI();
+        }
+
+        function celebrateGoalReached() {
+            stage.classList.add('shake-active', 'supernova-glow');
+            setTimeout(() => stage.classList.remove('shake-active'), 1600);
+            playRoseFanfareDopamine();
+            showCelebrationBanner(
+                '🎉 OBIETTIVO RAGGIUNTO!',
+                `${goalTarget} diamanti raccolti — JACKPOT per tutta l'Arena!`,
+                '',
+                true
+            );
+            isSpeakingAnnouncement = true;
+            speakVoiceWithLang(
+                `Obiettivo raggiunto! ${goalTarget} diamanti! Jackpot per tutta l'arena!`,
+                'it-IT',
+                () => { isSpeakingAnnouncement = false; }
+            );
+            chaosLevel = 100;
+            if (!isSupernovaActive) triggerSupernovaOverdrive();
+            updateChaosUI();
+        }
+
         let initialUser = urlParams.get('user') || urlParams.get('target') || '';
         if (!initialUser) {
             try { initialUser = localStorage.getItem('androbs_tiktok_user') || ''; } catch (e) {}
@@ -1959,6 +2201,16 @@
                 const res = await fetch(`/tiktok_events.php?since=${lastEventId}`);
                 if (res.ok) {
                     const data = await res.json();
+                    setBridgeStatus(true);
+
+                    // Al primo caricamento salta tutto il backlog: senza questo
+                    // l'overlay appena aperto riprodurrebbe fino a 50 eventi
+                    // vecchi (meteorre e re incoronati da regali di ore prima)
+                    if (!pollInitialized) {
+                        pollInitialized = true;
+                        lastEventId = data.last_id || 0;
+                    }
+
                     if (data.target_user) {
                         const targetSpan = document.getElementById('targetUserSpan');
                         if (targetSpan && targetSpan.textContent !== `@${data.target_user}`) {
@@ -1966,21 +2218,30 @@
                         }
                     }
 
-                    if (data.events && data.events.length > 0) {
+                    // Gli eventi arrivati con il primo poll sono il backlog:
+                    // si processano solo quelli ricevuti da ora in poi
+                    if (pollInitialized && data.events && data.events.length > 0) {
                         for (const ev of data.events) {
-                            if (ev.id > lastEventId) lastEventId = ev.id;
-                            handleRealTikTokEvent(ev);
+                            if (ev.id > lastEventId) {
+                                lastEventId = ev.id;
+                                handleRealTikTokEvent(ev);
+                            }
                         }
                     }
                 }
-            } catch (e) {}
+            } catch (e) {
+                setBridgeStatus(false);
+            }
             setTimeout(pollTikTokEvents, 800);
         }
         pollTikTokEvents();
 
         function handleRealTikTokEvent(ev) {
             lastRealEventTime = Date.now();
-            const u = ev.nickname || ev.user || "Spettatore";
+            // feedName: escapato dal backend, sicuro dentro innerHTML.
+            // canvasName: decodificato, per etichette canvas e voce TTS.
+            const feedName = ev.nickname || ev.user || "Spettatore";
+            const u = decodeEntities(feedName);
             const avatar = ev.avatar || "";
 
             if (avatar) preloadAvatar(avatar);
@@ -1988,6 +2249,8 @@
             if (ev.type === "gift") {
                 const giftName = ev.giftName || "Rosa";
                 const count = ev.repeatCount || 1;
+                // Valore in diamanti totale (0 = dato mancante: stima 1 a pezzo)
+                const giftValue = (ev.giftValue || 0) > 0 ? ev.giftValue : count;
 
                 // 1. Screen Shake fluido (1.2s) + Flash dorato
                 stage.classList.add('shake-active', 'gold-flash');
@@ -1997,45 +2260,115 @@
 
                 // 2. Audio Dopamina + Voce TTS
                 playRoseFanfareDopamine();
-                announceGiftVoice(u, giftName);
 
-                // 3. Sgancia la METEORA DORATA GIGANTE
-                spawnBall(u, true, avatar, true);
+                // 3. Celebrazione scalata sul valore reale del regalo:
+                //    rose piccole -> meteora classica; regali medi -> MEGA
+                //    vortice; regali grandi -> JACKPOT SUPREMO + supernova.
+                let tier = 'rose';
+                let bonusBalls = 6;
+                let meteorScale = 1.0;
+                let chaosGain = 40;
+                let scoreGain = 1000;
+                let feedIcon = '🌹';
+                let bannerTitle = `🌹 ${count > 1 ? count + 'x ' : ''}${giftName}!`;
+                let bannerSub = `@${u} conquista il Trono del Reattore!`;
 
-                // 4. Rilascia 6 Sfere Dorate Bonus in sequenza
-                for (let i = 0; i < 6; i++) {
+                if (giftValue >= 100) {
+                    tier = 'jackpot';
+                    bonusBalls = 12;
+                    meteorScale = 1.6;
+                    chaosGain = 100;
+                    scoreGain = giftValue * 12;
+                    feedIcon = '💎';
+                    bannerTitle = '💎 JACKPOT SUPREMO!';
+                    bannerSub = `@${u} incendia l'Arena con ${count > 1 ? count + 'x ' : ''}${giftName}!`;
+                } else if (giftValue >= 20) {
+                    tier = 'mega';
+                    bonusBalls = 9;
+                    meteorScale = 1.3;
+                    chaosGain = 70;
+                    scoreGain = giftValue * 8;
+                    feedIcon = '💥';
+                    bannerTitle = '💥 MEGA REGALO!';
+                    bannerSub = `@${u} scatena la Meteora del Reattore!`;
+                }
+
+                announceGiftVoice(feedName, giftName, tier);
+                showCelebrationBanner(bannerTitle, bannerSub, avatar, tier !== 'rose');
+
+                // 4. Sgancia la METEORA DORATA GIGANTE con la faccia del donatore
+                spawnBall(u, true, avatar, true, meteorScale);
+
+                // 5. Rilascia le Sfere Dorate Bonus in sequenza
+                for (let i = 0; i < bonusBalls; i++) {
                     setTimeout(() => {
                         spawnBall(u, true, avatar, false);
                     }, 140 * (i + 1));
                 }
 
-                // 5. Punteggio & Aumento Caos (+40%)
-                addScore(u, 1000 * count);
-                addFeedLine("🌹", u, `dona ${count}x ${giftName}! Meteora Dorata!`, true);
-                addChaos(40 * count);
+                // 6. Punteggio, Caos e avanzamento Obiettivo Regali
+                addScore(u, scoreGain * (tier === 'rose' ? count : 1));
+                addFeedLine(feedIcon, feedName, `dona ${count}x ${giftName}! +${scoreGain * (tier === 'rose' ? count : 1)} pt`, true);
+                addChaos(chaosGain);
+                addGiftGoalProgress(giftValue);
 
             } else if (ev.type === "comment") {
-                // Sfera Turbo x2
-                spawnBall(u, false, avatar);
-                setTimeout(() => spawnBall(u, false, avatar), 160);
+                // Sfera Turbo x2 (throttled: un utente che spamma non inonda l'arena)
+                if (canSpawnFor(u)) {
+                    spawnBall(u, false, avatar);
+                    setTimeout(() => spawnBall(u, false, avatar), 160);
+                }
                 addScore(u, 40);
-                addFeedLine("💬", u, ev.text ? `: ${ev.text}` : "Chat Turbo x2!");
+                addFeedLine("💬", feedName, ev.text ? `: ${ev.text}` : "Chat Turbo x2!");
                 playPopSound(540);
                 addChaos(4);
 
             } else if (ev.type === "like") {
-                // Sfera Attacco
-                spawnBall(u, false, avatar);
+                // Sfera Attacco (throttled)
+                if (canSpawnFor(u)) {
+                    spawnBall(u, false, avatar);
+                }
                 addScore(u, 15);
-                addFeedLine("❤️", u, `Like x${ev.repeatCount || 1}!`);
+                addFeedLine("❤️", feedName, `Like x${ev.repeatCount || 1}!`);
                 playPopSound(420);
                 addChaos(4);
 
             } else if (ev.type === "join") {
-                spawnBall(u, false, avatar);
+                if (canSpawnFor(u, 30000)) {
+                    spawnBall(u, false, avatar);
+                }
                 addScore(u, 10);
-                addFeedLine("👋", u, "entra nell'Arena!");
+                addFeedLine("👋", feedName, "entra nell'Arena!");
                 playPopSound(320);
+
+            } else if (ev.type === "follow") {
+                if (canSpawnFor(u, 15000)) {
+                    spawnBall(u, false, avatar);
+                }
+                addScore(u, 30);
+                addFeedLine("➕", feedName, "ha iniziato a seguirti!");
+                playPopSound(600);
+                addChaos(3);
+
+            } else if (ev.type === "share") {
+                // Le condivisioni spingono l'algoritmo: premiale in grande
+                if (canSpawnFor(u, 15000)) {
+                    spawnBall(u, true, avatar);
+                }
+                addScore(u, 80);
+                addFeedLine("🔁", feedName, "ha condiviso la LIVE! 🚀");
+                playPopSound(700);
+                addChaos(8);
+
+            } else if (ev.type === "subscribe") {
+                spawnBall(u, true, avatar);
+                addScore(u, 500);
+                addFeedLine("⭐", feedName, "si è abbonato al canale!", true);
+                playBumperChime(8, 1.4);
+                addChaos(20);
+
+            } else if (ev.type === "connect") {
+                addFeedLine("🟢", feedName, "Bridge collegato alla stanza!");
             }
         }
 
