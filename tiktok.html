@@ -1379,8 +1379,15 @@
         // incoronerebbe il Re in ~1s nascondendo i banner dei livelli regalo.
         const celebrationQueue = [];
         let celebrationShowing = false;
+        // Ogni banner resta ~4s: senza tetto l'attività ambientale (incoronazioni,
+        // promozioni) accoda decine di celebrazioni e quella di un donatore reale
+        // apparirebbe con minuti di ritardo. Oltre il limite scartiamo la più vecchia.
+        const CELEBRATION_QUEUE_MAX = 6;
 
         function showCelebrationBanner(title, sub, avatar, isSuper = false, holdMs = 3400) {
+            if (celebrationQueue.length >= CELEBRATION_QUEUE_MAX) {
+                celebrationQueue.shift();
+            }
             celebrationQueue.push({ title, sub, avatar, isSuper, holdMs });
             pumpCelebrationQueue();
         }
@@ -1424,6 +1431,11 @@
         };
 
         function showDonorSpotlight(user, avatar, pts, tier) {
+            // Stesso anti-flood dei banner: al massimo 4 spotlight in attesa,
+            // così un donatore non resta in coda dietro sfilze di eventi
+            if (spotlightQueue.length >= 4) {
+                spotlightQueue.shift();
+            }
             spotlightQueue.push({ user, avatar, pts, tier });
             pumpSpotlightQueue();
         }
@@ -1495,6 +1507,11 @@
         // Conta quante volte lo stesso utente ha conquistato il trono:
         // restare Re ripetutamente merita un titolo crescente (Re II, III...)
         const reignCounts = {};
+        // Anti-inflazione: sotto supernova il trono cambia padrone ogni frazione
+        // di secondo. Senza cooldown lo stesso utente diventerebbe "Re X" in
+        // pochi secondi e i +2000pt di incoronazione esploderebbero.
+        const lastCrownAt = {};
+        const CROWN_COOLDOWN_MS = 20000;
 
         function updateChaosUI() {
             const fill = document.getElementById('chaosFill');
@@ -1928,6 +1945,16 @@
             currentKing.user = user;
             currentKing.avatar = avatar;
             reactorThrone.shieldHp = reactorThrone.maxShieldHp;
+
+            // Cooldown anti-inflazione: una re-incoronazione dello stesso utente
+            // entro 20s aggiorna trono e scudo ma non conta un nuovo regno né
+            // ri-spara banner e punti (evita Re X in 2 secondi sotto supernova).
+            const now = Date.now();
+            if (now - (lastCrownAt[user] || 0) < CROWN_COOLDOWN_MS) {
+                lastCrownAt[user] = now;
+                return;
+            }
+            lastCrownAt[user] = now;
 
             // Se lo stesso utente riprende il trono più volte nella stessa
             // live, il titolo cresce: Re II, Re III... — difendere il regno
