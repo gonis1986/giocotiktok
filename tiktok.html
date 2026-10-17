@@ -2709,7 +2709,9 @@
                 const isRankClass = classes[idx] ? ` ${classes[idx]}` : "";
                 const uDisplay = s[0].startsWith('@') ? s[0] : '@' + s[0];
                 const tier = getPrestigeTier(s[1]);
-                return `<div class="lb-row${isRankClass}"><span>${ranks[idx]} ${tier.icon} ${uDisplay}</span><span>${s[1].toLocaleString()} pt</span></div>`;
+                const wonTag = pastWinners.has(s[0].toLowerCase()) ? ' <span style="opacity:.55;font-size:.72em">🏆✕</span>' : '';
+                const botTag = isBotSuspect(s[0]) ? ' ⚠️' : '';
+                return `<div class="lb-row${isRankClass}"><span>${ranks[idx]} ${tier.icon} ${uDisplay}${wonTag}${botTag}</span><span>${s[1].toLocaleString()} pt</span></div>`;
             }).join('');
         }
 
@@ -2840,6 +2842,87 @@
         let tourneyEnded = false;
         const tourneyPlayers = new Set();
 
+        /* ================= REGISTRO VINCITORI (anti-ripetizione premio) =================
+           Chi ha già vinto NON può vincere di nuovo: il premio passa al
+           prossimo in classifica. Il server conserva i vincitori in
+           tiktok_winners.json (scritto dal PHP ad ogni incoronazione);
+           localStorage fa da riserva se il registro remoto non risponde.
+           ?repeat=1 riammette i vecchi vincitori (disattiva il blocco). */
+        const allowRepeatWin = urlParams.get('repeat') === '1';
+        const pastWinners = new Set();
+        try {
+            JSON.parse(localStorage.getItem('androbs_winners') || '[]')
+                .forEach(w => pastWinners.add(String(w).toLowerCase()));
+        } catch (e) {}
+        fetch('/tiktok_events.php?action=winners')
+            .then(r => r.json())
+            .then(d => (d.winners || []).forEach(w => pastWinners.add(String(w.user).toLowerCase())))
+            .catch(() => {});
+
+        function recordWinner(user, prize) {
+            pastWinners.add(user.toLowerCase());
+            try {
+                const ls = JSON.parse(localStorage.getItem('androbs_winners') || '[]');
+                if (!ls.some(x => String(x).toLowerCase() === user.toLowerCase())) {
+                    ls.push(user);
+                    localStorage.setItem('androbs_winners', JSON.stringify(ls));
+                }
+            } catch (e) {}
+            // Salva sul server: serve ANDROBS_PANEL_KEY impostata sul PHP e
+            // la stessa chiave come ?key= nell'URL dell'overlay.
+            fetch('/tiktok_events.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'crown', user, prize, key: panelKey })
+            }).catch(() => {});
+        }
+
+        /* ================= ANTI-SCRIPT / AUTOCLICKER =================
+           Un autoclicker può fare 50+ tap/s, un umano ne regge ~10-15.
+           Due difese:
+           1) tetto punti gratis al secondo (150 pt/s): lo script non può
+              andare più veloce di un umano determinato, la gara resta su
+              costanza e regali;
+           2) rilevatore di ritmo superumano: >25 tap/s per 3 secondi di
+              fila = marchio ⚠️ in classifica e punti like congelati 30s. */
+        const TAP_SUSPECT_WINDOW_MS = 3000;
+        const TAP_SUSPECT_LIMIT = 75;
+        const SUSPECT_FREEZE_MS = 30000;
+        const tapLog = {};
+        const botSuspects = {};
+        const suspectWarned = new Set();
+
+        function noteTaps(user, count) {
+            const now = Date.now();
+            const log = tapLog[user] || (tapLog[user] = []);
+            log.push([now, count]);
+            while (log.length && now - log[0][0] > TAP_SUSPECT_WINDOW_MS) log.shift();
+            const total = log.reduce((a, e) => a + e[1], 0);
+            if (total > TAP_SUSPECT_LIMIT && !(botSuspects[user] > now)) {
+                botSuspects[user] = now + SUSPECT_FREEZE_MS;
+                if (!suspectWarned.has(user)) {
+                    suspectWarned.add(user);
+                    addFeedLine('⚠️', user, 'ritmo da autoclicker: punti like congelati 30s!');
+                }
+            }
+        }
+
+        function isBotSuspect(user) {
+            return (botSuspects[user] || 0) > Date.now();
+        }
+
+        const freePtsWindow = {};
+        const FREE_PTS_CAP_PER_SEC = 150;
+        function freePoints(user, pts) {
+            if (isBotSuspect(user)) return 0;
+            const now = Date.now();
+            const w = freePtsWindow[user] || (freePtsWindow[user] = { start: now, pts: 0 });
+            if (now - w.start > 1000) { w.start = now; w.pts = 0; }
+            const grant = Math.min(pts, Math.max(0, FREE_PTS_CAP_PER_SEC - w.pts));
+            w.pts += grant;
+            return grant;
+        }
+
         if (tourneyMinutes > 0) {
             for (const k in userScores) delete userScores[k];
             updateLeaderboardUI();
@@ -2884,7 +2967,16 @@
                 showCelebrationBanner('🏁 TORNEO FINITO', 'Nessun partecipante — alla prossima settimana!', '', true, 6000);
                 return;
             }
-            const [winner, pts] = sorted[0];
+            // Chi ha già vinto non può vincere di nuovo: il premio scorre
+            // al primo in classifica ancora "vergine" di premio.
+            let winner = null, pts = 0;
+            for (const [u, p] of sorted) {
+                if (allowRepeatWin || !pastWinners.has(u.toLowerCase())) { winner = u; pts = p; break; }
+            }
+            if (!winner) {
+                showCelebrationBanner('🏁 TORNEO FINITO', 'I leader hanno tutti già vinto in passato — premio non assegnato!', '', true, 7000);
+                return;
+            }
             stage.classList.add('shake-active', 'supernova-glow');
             setTimeout(() => stage.classList.remove('shake-active'), 2000);
             chaosLevel = 100;
@@ -2900,6 +2992,7 @@
                     true,
                     8000
                 );
+                recordWinner(winner, tourneyPrizeParam);
                 isSpeakingAnnouncement = true;
                 speakVoiceWithLang(
                     `Il torneo è finito! Il vincitore è ${winner} con ${pts} punti! ` +
@@ -3002,6 +3095,7 @@
             setTimeout(() => {
                 const prize = prizeSegments[winIdx];
                 document.getElementById('wheelResult').textContent = `🏆 ${prize}!`;
+                recordWinner(winner, prize);
                 playWinnerJingle();
                 stage.classList.add('shake-active');
                 setTimeout(() => stage.classList.remove('shake-active'), 1500);
@@ -3155,7 +3249,7 @@
                     spawnBall(u, false, avatar);
                     setTimeout(() => spawnBall(u, false, avatar), 160);
                 }
-                addScore(u, 40);
+                addScore(u, freePoints(u, 40));
                 addFeedLine("💬", feedName, ev.text ? `: ${ev.text}` : "Chat Turbo x2!");
                 playPopSound(540);
                 addChaos(4);
@@ -3165,7 +3259,10 @@
                 if (canSpawnFor(u)) {
                     spawnBall(u, false, avatar);
                 }
-                addScore(u, 15);
+                // I punti scalano coi tap reali (5/tap, max 30 tap per batch)
+                // ma il tetto anti-autoclicker ferma gli script.
+                noteTaps(u, ev.repeatCount || 1);
+                addScore(u, freePoints(u, Math.min(ev.repeatCount || 1, 30) * 5));
                 addFeedLine("❤️", feedName, `Like x${ev.repeatCount || 1}!`);
                 playPopSound(420);
                 addChaos(4);
@@ -3174,7 +3271,7 @@
                 if (canSpawnFor(u, 30000)) {
                     spawnBall(u, false, avatar);
                 }
-                addScore(u, 10);
+                addScore(u, freePoints(u, 10));
                 addFeedLine("👋", feedName, "entra nell'Arena!");
                 playPopSound(320);
                 greetJoiner(u);
@@ -3183,7 +3280,7 @@
                 if (canSpawnFor(u, 15000)) {
                     spawnBall(u, false, avatar);
                 }
-                addScore(u, 30);
+                addScore(u, freePoints(u, 30));
                 addFeedLine("➕", feedName, "ha iniziato a seguirti!");
                 playPopSound(600);
                 addChaos(3);
@@ -3193,7 +3290,7 @@
                 if (canSpawnFor(u, 15000)) {
                     spawnBall(u, true, avatar);
                 }
-                addScore(u, 80);
+                addScore(u, freePoints(u, 80));
                 addFeedLine("🔁", feedName, "ha condiviso la LIVE! 🚀");
                 playPopSound(700);
                 addChaos(8);

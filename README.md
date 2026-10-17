@@ -110,7 +110,9 @@ Dettagli importanti:
 - La classifica parte **vuota**: gli utenti demo precaricati non contano.
 - Solo gli utenti con **eventi reali** (like, chat, regali via bridge) fanno punti — i giocatori simulati che animano l'arena a riposo non possono vincere il premio.
 - I like sono il modo gratuito di accumulare punti: il torneo è vincibile anche senza donare.
-- Esempio completo: `tiktok.html?user=NOME&tourney=30`
+- **Anti-ripetizione premio**: chi ha già vinto non può vincere di nuovo — allo scadere il premio passa al primo in classifica "vergine" di premio. I vincitori sono registrati in `tiktok_data/tiktok_winners.json` (scritto automaticamente a ogni incoronazione; modificabile a mano) e marcati 🏆✕ in classifica. Richiede `ANDROBS_PANEL_KEY` sul server e `&key=LA_CHIAVE` nell'URL dell'overlay; localStorage fa da riserva. `?repeat=1` disattiva il blocco.
+- **Anti-autoclicker**: i punti gratis (like/chat/join/follow/share) hanno un tetto di 150 pt/s per utente, e chi supera ~25 tap/s per 3 secondi viene marchiato ⚠️ in classifica con punti like congelati 30s — uno script non può più battere un umano.
+- Esempio completo: `tiktok.html?user=NOME&tourney=30&key=LA_CHIAVE`
 
 ### Pagina Regolamento (`regole.html`)
 Pagina pubblica del torneo da mostrare/linkare prima della live: spiega l'appuntamento settimanale (domenica ore 20:00), le regole del gioco, il montepremi estratto con la Ruota, e le condizioni di ritiro (DM su Instagram/TikTok + video d'uso di ANDROBS sui social con tag, poi invio al canale YouTube ufficiale). Include il countdown live alla prossima domenica.

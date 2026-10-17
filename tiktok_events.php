@@ -34,6 +34,9 @@ if (!is_dir($data_dir)) {
 
 $queue_file = $data_dir . '/tiktok_live_queue.json';
 $target_file = $data_dir . '/tiktok_target_user.json';
+// Registro vincitori del torneo: chi ha già vinto non può vincere di
+// nuovo (anti-ripetizione del premio e anti-farm da script).
+$winners_file = $data_dir . '/tiktok_winners.json';
 
 // Inizializza file se inesistenti
 if (!file_exists($queue_file)) {
@@ -48,6 +51,9 @@ if (!file_exists($target_file)) {
         'updated_at' => time()
     ], JSON_PRETTY_PRINT));
 }
+if (!file_exists($winners_file)) {
+    file_put_contents($winners_file, json_encode([], JSON_PRETTY_PRINT));
+}
 
 // -----------------------------------------------------------------------------
 // POST: Ricezione eventi o cambio target dallo script bridge
@@ -55,6 +61,41 @@ if (!file_exists($target_file)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $raw_input = file_get_contents('php://input');
     $payload = json_decode($raw_input, true);
+
+    // Incoronazione vincitore: arriva dal BROWSER dello streamer (non dal
+    // bridge, che qui non c'entra), quindi si autorizza con la chiave
+    // pannello invece che col token del bridge.
+    if (($payload['action'] ?? '') === 'crown') {
+        if ($panel_key === '' || ($payload['key'] ?? '') !== $panel_key) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Chiave pannello mancante o errata']);
+            exit;
+        }
+        $w_user = preg_replace('/[^a-zA-Z0-9_\.]/', '', str_replace('@', '', $payload['user'] ?? ''));
+        $w_prize = htmlspecialchars(substr($payload['prize'] ?? '', 0, 40), ENT_QUOTES, 'UTF-8');
+        if ($w_user === '') {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Username non valido']);
+            exit;
+        }
+        $winners = json_decode(@file_get_contents($winners_file), true) ?: [];
+        $found = false;
+        foreach ($winners as &$w) {
+            if (strcasecmp($w['user'], $w_user) === 0) {
+                $w['prize'] = $w_prize;
+                $w['ts'] = time();
+                $found = true;
+                break;
+            }
+        }
+        unset($w);
+        if (!$found) {
+            $winners[] = ['user' => $w_user, 'prize' => $w_prize, 'ts' => time()];
+        }
+        file_put_contents($winners_file, json_encode(array_values($winners), JSON_PRETTY_PRINT));
+        echo json_encode(['status' => 'ok', 'winners' => count($winners)]);
+        exit;
+    }
 
     // Verifica Token di sicurezza
     $headers = getallheaders();
@@ -163,6 +204,14 @@ if (!empty($_GET['target'])) {
         'updated_at' => time()
     ], JSON_PRETTY_PRINT));
     $target_info['user'] = $user;
+}
+
+// Lista pubblica dei vincitori passati (l'overlay la legge per escludere
+// chi ha già vinto dal prossimo premio).
+if (isset($_GET['action']) && $_GET['action'] === 'winners') {
+    $winners = json_decode(@file_get_contents($winners_file), true) ?: [];
+    echo json_encode(['status' => 'ok', 'winners' => $winners]);
+    exit;
 }
 
 // Se il daemon del bridge chiede solo l'account da monitorare
