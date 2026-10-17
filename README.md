@@ -101,6 +101,15 @@ I regali "combo/streak" di TikTok vengono conteggiati una sola volta alla fine d
 ### Barra Obiettivo Regali (`?goal=DIAMANTI`)
 Aprendo l'overlay con `?goal=100` compare una seconda barra dorata **OBIETTIVO REGALI** che si riempie ad ogni donazione in base ai diamanti ricevuti. Al raggiungimento: jackpot collettivo (celebrazione + supernova) e la barra riparte da zero. È il classico "gift goal" che mantiene alta la spinta alle donazioni per tutta la live.
 
+### Modalità Torneo (`?tourney=MINUTI&prize=PREMIO`)
+Aprendo l'overlay con `?tourney=30&prize=20€` parte un **torneo a tempo**: barra dorata con countdown, regole riscritte ("TAP TAP sui like = punti gratis, rose/regali = sorpasso"), annuncio vocale delle regole all'avvio. Allo 00:00 i punteggi si congelano e il primo della classifica viene proclamato vincitore con spotlight, jingle e annuncio vocale del premio.
+
+Dettagli importanti:
+- La classifica parte **vuota**: gli utenti demo precaricati non contano.
+- Solo gli utenti con **eventi reali** (like, chat, regali via bridge) fanno punti — i giocatori simulati che animano l'arena a riposo non possono vincere il premio.
+- I like sono il modo gratuito di accumulare punti: il torneo è vincibile anche senza donare.
+- Esempio completo: `tiktok.html?user=NOME&tourney=30&prize=20€`
+
 ### Follow, Condivisioni e Abbonamenti
 Anche gli eventi di crescita generano sfere e righe nel feed: **follow** (+30 pt), **share** (sfera dorata +80 pt — le condivisioni spingono l'algoritmo FYP) e **subscribe** (sfera dorata +500 pt).
 

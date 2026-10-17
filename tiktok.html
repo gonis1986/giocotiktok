@@ -386,6 +386,43 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
+        /* BARRA TORNEO (countdown + premio) - attivata con ?tourney=MINUTI */
+        .tourney-bar {
+            height: 52px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, rgba(120, 20, 40, 0.92), rgba(80, 10, 60, 0.92));
+            border: 2px solid rgba(250, 204, 21, 0.85);
+            border-radius: 12px;
+            padding: 0 18px;
+            font-size: 19px;
+            font-weight: 900;
+            color: #ffe9c9;
+            box-shadow: 0 0 22px rgba(250, 204, 21, 0.35), inset 0 0 18px rgba(250, 204, 21, 0.12);
+            margin-bottom: 4px;
+        }
+        .tourney-bar.visible {
+            display: flex;
+        }
+        .tourney-bar .tourney-clock {
+            font-size: 26px;
+            color: #facc15;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 14px rgba(250, 204, 21, 0.9);
+        }
+        .tourney-bar .tourney-clock.urgent {
+            color: #f87171;
+            animation: tourneyPulse 0.6s infinite alternate;
+        }
+        .tourney-bar .tourney-prize {
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+        }
+        @keyframes tourneyPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.12); }
+        }
         .rules-bar {
             height: 40px;
             display: flex;
@@ -873,7 +910,13 @@
                         <span class="chaos-state-badge" id="chaosTextVal">0% (CALMA)</span>
                     </div>
                 </div>
-                <div class="rules-bar">
+                <!-- BARRA TORNEO (visibile solo con ?tourney=MINUTI) -->
+                <div class="tourney-bar" id="tourneyBar">
+                    <span>🏆 TORNEO</span>
+                    <span class="tourney-clock" id="tourneyClock">--:--</span>
+                    <span class="tourney-prize" id="tourneyPrize">PREMIO: 20€</span>
+                </div>
+                <div class="rules-bar" id="rulesBar">
                     <span>❤️ <b class="highlight">Like</b> = Sfera Attacco (+4%)</span>
                     <span>💬 <b class="highlight">Chat</b> = Sfera Turbo x2 (+4%)</span>
                     <span>🌹 <b class="rose">1 Rosa</b> = METEORA DORATA + RUBA TRONO! (+40%)</span>
@@ -2551,6 +2594,8 @@
         };
 
         function addScore(user, points) {
+            if (tourneyEnded) return;
+            if (tourneyMinutes > 0 && !tourneyPlayers.has(user)) return;
             const before = getPrestigeTier(userScores[user] || 0);
             userScores[user] = (userScores[user] || 0) + points;
             const after = getPrestigeTier(userScores[user]);
@@ -2700,6 +2745,85 @@
             setNewTikTokTarget(initialUser);
         }
 
+        /* ================= MODALITÀ TORNEO (?tourney=MINUTI&prize=PREMIO) =================
+           Classifica a tempo: chi è in testa allo scadere vince il premio.
+           Il torneo parte con la classifica vuota — i punteggi demo precaricati
+           non devono poter vincere un premio reale. Allo 00:00 i punti si
+           congelano e il leader viene proclamato vincitore con cerimonia
+           completa (spotlight + jingle + annuncio vocale). */
+        const tourneyMinutes = Math.max(0, parseFloat(urlParams.get('tourney') || '0') || 0);
+        const tourneyPrize = urlParams.get('prize') || '20€';
+        let tourneyEndsAt = 0;
+        let tourneyEnded = false;
+        const tourneyPlayers = new Set();
+
+        if (tourneyMinutes > 0) {
+            for (const k in userScores) delete userScores[k];
+            updateLeaderboardUI();
+            tourneyEndsAt = Date.now() + tourneyMinutes * 60 * 1000;
+            document.getElementById('tourneyBar').classList.add('visible');
+            document.getElementById('tourneyPrize').textContent = `PREMIO: ${tourneyPrize}`;
+            document.getElementById('rulesBar').innerHTML =
+                `<span>👆 <b class="highlight">TAP TAP sui Like</b> = punti gratis per vincere!</span>` +
+                `<span>💬 <b class="highlight">Chat</b> = punti extra</span>` +
+                `<span>🌹 <b class="rose">Rose/Regali</b> = SORPASSO immediato!</span>` +
+                `<span>🏆 <b class="highlight">1° allo scadere</b> = vince ${tourneyPrize}!</span>`;
+            updateTourneyClock();
+            setInterval(updateTourneyClock, 1000);
+            setTimeout(() => {
+                isSpeakingAnnouncement = true;
+                speakVoiceWithLang(
+                    `Il torneo è iniziato! Fai tap tap sui like per guadagnare punti gratis. ` +
+                    `Le rose ti fanno sorpassare tutti! Chi è primo alla fine vince ${tourneyPrize}!`,
+                    'it-IT',
+                    () => { isSpeakingAnnouncement = false; }
+                );
+            }, 15000);
+        }
+
+        function updateTourneyClock() {
+            if (tourneyEnded) return;
+            const remain = Math.max(0, tourneyEndsAt - Date.now());
+            const m = Math.floor(remain / 60000);
+            const s = Math.floor((remain % 60000) / 1000);
+            const clock = document.getElementById('tourneyClock');
+            clock.textContent = `${m}:${String(s).padStart(2, '0')}`;
+            clock.classList.toggle('urgent', remain < 60000 && remain > 0);
+            if (remain <= 0) finishTournament();
+        }
+
+        function finishTournament() {
+            if (tourneyEnded) return;
+            tourneyEnded = true;
+            document.getElementById('tourneyClock').textContent = 'FINE!';
+            const sorted = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
+            if (sorted.length === 0) {
+                showCelebrationBanner('🏁 TORNEO FINITO', 'Nessun partecipante — alla prossima settimana!', '', true, 6000);
+                return;
+            }
+            const [winner, pts] = sorted[0];
+            stage.classList.add('shake-active', 'supernova-glow');
+            setTimeout(() => stage.classList.remove('shake-active'), 2000);
+            chaosLevel = 100;
+            updateChaosUI();
+            showDonorSpotlight(winner, '', pts, 'jackpot');
+            showCelebrationBanner(
+                `🏆 VINCITORE DEL TORNEO: @${winner}!`,
+                `${pts.toLocaleString()} punti — premio ${tourneyPrize}! Contatta lo streamer per riscuotere!`,
+                '',
+                true,
+                8000
+            );
+            playWinnerJingle();
+            isSpeakingAnnouncement = true;
+            speakVoiceWithLang(
+                `Il torneo è finito! Il vincitore è ${winner} con ${pts} punti! ` +
+                `Hai vinto ${tourneyPrize}! Contatta lo streamer per riscuotere il premio!`,
+                'it-IT',
+                () => { isSpeakingAnnouncement = false; }
+            );
+        }
+
         async function pollTikTokEvents() {
             try {
                 const res = await fetch(`/tiktok_events.php?since=${lastEventId}`);
@@ -2746,6 +2870,9 @@
             // canvasName: decodificato, per etichette canvas e voce TTS.
             const feedName = ev.nickname || ev.user || "Spettatore";
             const u = decodeEntities(feedName);
+            // Solo chi produce eventi REALI può vincere il torneo: le sfere
+            // del simulatore di riempimento animano l'arena ma non fanno punti.
+            tourneyPlayers.add(u);
             const avatar = ev.avatar || "";
 
             if (avatar) preloadAvatar(avatar);
