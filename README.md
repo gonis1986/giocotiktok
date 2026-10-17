@@ -1,4 +1,4 @@
-# ⚡ AndrObs Quantum Pinball Reactor — TikTok LIVE Interactive Arena
+# ⚡ ANDROBS Quantum Pinball Reactor — TikTok LIVE Interactive Arena
 
 > **Motore Arcade Interattivo 2D Full HD (1080x1920) a 60 FPS in Tempo Reale per TikTok LIVE.**  
 > Progettato per massimizzare il coinvolgimento degli spettatori, scatenare scariche di dopamina/endorfina sui regali (Rose, Super Gifts) e **azzerare qualsiasi restrizione algoritmica di TikTok per "contenuti riprodotti"**.
@@ -28,7 +28,7 @@ Il gioco fonde le meccaniche di **Flipper Neon (Pinball) + Plinko + Re del Reatt
 
 ```
 +-------------------------------------------------------------+
-| ⚡ AndrObs Studio        👥 SFÉRE ATTIVE        🎯 @streamer |
+| ⚡ ANDROBS Studio        👥 SFÉRE ATTIVE        🎯 @streamer |
 +-------------------------------------------------------------+
 | 🌐 WWW.ANDROBS.COM — WEBCAM 4K 60FPS — AI LIVE TRANSLATOR  |
 +-------------------------------------------------------------+
@@ -113,23 +113,23 @@ Dettagli importanti:
 - Esempio completo: `tiktok.html?user=NOME&tourney=30`
 
 ### Pagina Regolamento (`regole.html`)
-Pagina pubblica del torneo da mostrare/linkare prima della live: spiega l'appuntamento settimanale (domenica ore 20:00), le regole del gioco, il montepremi estratto con la Ruota, e le condizioni di ritiro (DM su Instagram/TikTok + video d'uso di AndrObs sui social con tag, poi invio al canale YouTube ufficiale). Include il countdown live alla prossima domenica.
+Pagina pubblica del torneo da mostrare/linkare prima della live: spiega l'appuntamento settimanale (domenica ore 20:00), le regole del gioco, il montepremi estratto con la Ruota, e le condizioni di ritiro (DM su Instagram/TikTok + video d'uso di ANDROBS sui social con tag, poi invio al canale YouTube ufficiale). Include il countdown live alla prossima domenica.
 
 ### Follow, Condivisioni e Abbonamenti
 Anche gli eventi di crescita generano sfere e righe nel feed: **follow** (+30 pt), **share** (sfera dorata +80 pt — le condivisioni spingono l'algoritmo FYP) e **subscribe** (sfera dorata +500 pt).
 
 ---
 
-## 🎙️ 4. Sponsorizzazione AndrObs & Speaker Vocale in 4 Lingue
+## 🎙️ 4. Sponsorizzazione ANDROBS & Speaker Vocale in 4 Lingue
 
 Anche senza video preregistrato, il brand e il prodotto sono sempre al centro dell'attenzione:
 - **Banner Neon Safe Zone:** Marquee continuo e header dedicati a `WWW.ANDROBS.COM` (Webcam 4K 60fps da Smartphone, Traduttore Vocale AI, Zero Lag).
 - **Speaker Vocale Automatico ogni 40s (Web Speech API):**  
-  Quando non c'è una celebrazione regalo in corso, una voce madrelingua sintetizzata annuncia le funzionalità di AndrObs con una card di sottotitoli elegante:
-  - 🇮🇹 `it-IT`: *"Trasforma il tuo telefono in una webcam 4K e traduci la tua voce in tempo reale con AndrObs punto com!"*
-  - 🇬🇧 `en-US`: *"Turn your phone into a 4K webcam with real-time AI voice translation! Visit AndrObs dot com!"*
-  - 🇪🇸 `es-ES`: *"¡Convierte tu móvil en una webcam 4K con traducción de voz por IA en tiempo real en AndrObs punto com!"*
-  - 🇯🇵 `ja-JP`: *"スマホを4Kウェブカメラに変えて、AIでリアルタイム音声翻訳！今すぐ AndrObs ドットコムへ！"*
+  Quando non c'è una celebrazione regalo in corso, una voce madrelingua sintetizzata annuncia le funzionalità di ANDROBS con una card di sottotitoli elegante:
+  - 🇮🇹 `it-IT`: *"Trasforma il tuo telefono in una webcam 4K e traduci la tua voce in tempo reale con androbs punto com!"*
+  - 🇬🇧 `en-US`: *"Turn your phone into a 4K webcam with real-time AI voice translation! Visit androbs dot com!"*
+  - 🇪🇸 `es-ES`: *"¡Convierte tu móvil en una webcam 4K con traducción de voz por IA en tiempo real en androbs punto com!"*
+  - 🇯🇵 `ja-JP`: *"スマホを4Kウェブカメラに変えて、AIでリアルタイム音声翻訳！今すぐ androbs ドットコムへ！"*
 
 ---
 
@@ -265,4 +265,4 @@ Questo repository pubblico è conforme a tutte le best practice di sicurezza:
 ---
 
 ## 📄 Licenza
-Progetto rilasciato per l'ecosistema [AndrObs Studio](https://www.androbs.com). Tutti i diritti riservati.
+Progetto rilasciato per l'ecosistema [ANDROBS Studio](https://www.androbs.com). Tutti i diritti riservati.

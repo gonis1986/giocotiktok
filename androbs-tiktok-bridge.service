@@ -1,5 +1,5 @@
 [Unit]
-Description=AndrObs TikTok LIVE Real-Time Event Bridge Daemon
+Description=androbs TikTok LIVE Real-Time Event Bridge Daemon
 After=network.target
 
 [Service]
