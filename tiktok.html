@@ -2620,7 +2620,14 @@
         function updateLeaderboardUI() {
             const sorted = Object.entries(userScores).sort((a, b) => b[1] - a[1]).slice(0, 5);
             const listEl = document.getElementById('leaderboardList');
-            if (sorted.length === 0 || !listEl) return;
+            if (!listEl) return;
+            if (sorted.length === 0) {
+                // Senza questo reset le righe demo dell'HTML resterebbero
+                // visibili all'avvio di un torneo (e potrebbero "vincere" lo
+                // sguardo dello spettatore mentre la gara è ancora deserta).
+                listEl.innerHTML = `<div class="lb-row"><span>⏳ In attesa di partecipanti…</span><span>0 pt</span></div>`;
+                return;
+            }
 
             const ranks = ["🥇", "🥈", "🥉", "4.", "5."];
             const classes = ["gold", "silver", "bronze", "", ""];
