@@ -423,6 +423,68 @@
             from { transform: scale(1); }
             to { transform: scale(1.12); }
         }
+
+        /* RUOTA DELLA FORTUNA: estrae il premio a fine torneo */
+        #prizeWheel {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 45%, rgba(70, 10, 40, 0.7), rgba(8, 1, 6, 0.94) 75%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 90;
+            transition: opacity 0.4s ease;
+        }
+        #prizeWheel.active {
+            opacity: 1;
+        }
+        .wheel-title {
+            font-size: 34px;
+            font-weight: 900;
+            color: #facc15;
+            text-shadow: 0 0 24px rgba(250, 204, 21, 0.9), 0 3px 8px rgba(0,0,0,0.9);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .wheel-sub {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffe9c9;
+            margin-bottom: 14px;
+        }
+        .wheel-frame {
+            position: relative;
+            width: 430px;
+            height: 430px;
+        }
+        #prizeWheelCanvas {
+            width: 430px;
+            height: 430px;
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(250, 204, 21, 0.55), 0 0 110px rgba(254, 44, 85, 0.35);
+            transform: rotate(0deg);
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 44px;
+            color: #fef08a;
+            text-shadow: 0 0 16px rgba(250, 204, 21, 1), 0 3px 6px #000;
+            z-index: 2;
+        }
+        .wheel-result {
+            margin-top: 16px;
+            font-size: 40px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(250, 204, 21, 0.95), 0 3px 8px #000;
+            min-height: 56px;
+        }
         .rules-bar {
             height: 40px;
             display: flex;
@@ -964,6 +1026,17 @@
                         <div class="spot-pts" id="spotPts">+0 PT</div>
                         <div class="spot-tier-badge" id="spotTierBadge">🌹 Rosa</div>
                     </div>
+                </div>
+
+                <!-- RUOTA DELLA FORTUNA: estrae il premio a fine torneo -->
+                <div id="prizeWheel">
+                    <div class="wheel-title">🎡 RUOTA DELLA FORTUNA</div>
+                    <div class="wheel-sub" id="wheelSub">Il vincitore estrae il suo premio!</div>
+                    <div class="wheel-frame">
+                        <div class="wheel-pointer">▼</div>
+                        <canvas id="prizeWheelCanvas" width="860" height="860"></canvas>
+                    </div>
+                    <div class="wheel-result" id="wheelResult"></div>
                 </div>
             </div>
 
@@ -2759,7 +2832,10 @@
            congelano e il leader viene proclamato vincitore con cerimonia
            completa (spotlight + jingle + annuncio vocale). */
         const tourneyMinutes = Math.max(0, parseFloat(urlParams.get('tourney') || '0') || 0);
-        const tourneyPrize = urlParams.get('prize') || '20€';
+        // ?prize=TESTO forza un premio fisso; senza, a fine torneo gira la
+        // Ruota della Fortuna ed estrae il premio dal montepremi.
+        const tourneyPrizeParam = urlParams.get('prize');
+        const tourneyPrize = tourneyPrizeParam || 'ruota';
         let tourneyEndsAt = 0;
         let tourneyEnded = false;
         const tourneyPlayers = new Set();
@@ -2769,19 +2845,19 @@
             updateLeaderboardUI();
             tourneyEndsAt = Date.now() + tourneyMinutes * 60 * 1000;
             document.getElementById('tourneyBar').classList.add('visible');
-            document.getElementById('tourneyPrize').textContent = `PREMIO: ${tourneyPrize}`;
+            document.getElementById('tourneyPrize').textContent = tourneyPrizeParam ? `PREMIO: ${tourneyPrizeParam}` : 'PREMIO: 🎡 RUOTA';
             document.getElementById('rulesBar').innerHTML =
                 `<span>👆 <b class="highlight">TAP TAP sui Like</b> = punti gratis per vincere!</span>` +
                 `<span>💬 <b class="highlight">Chat</b> = punti extra</span>` +
                 `<span>🌹 <b class="rose">Rose/Regali</b> = SORPASSO immediato!</span>` +
-                `<span>🏆 <b class="highlight">1° allo scadere</b> = vince ${tourneyPrize}!</span>`;
+                `<span>🏆 <b class="highlight">1° allo scadere</b> = vince il premio!</span>`;
             updateTourneyClock();
             setInterval(updateTourneyClock, 1000);
             setTimeout(() => {
                 isSpeakingAnnouncement = true;
                 speakVoiceWithLang(
                     `Il torneo è iniziato! Fai tap tap sui like per guadagnare punti gratis. ` +
-                    `Le rose ti fanno sorpassare tutti! Chi è primo alla fine vince ${tourneyPrize}!`,
+                    `Le rose ti fanno sorpassare tutti! Chi è primo alla fine estrae il premio con la Ruota della Fortuna!`,
                     'it-IT',
                     () => { isSpeakingAnnouncement = false; }
                 );
@@ -2814,21 +2890,138 @@
             chaosLevel = 100;
             updateChaosUI();
             showDonorSpotlight(winner, '', pts, 'jackpot');
-            showCelebrationBanner(
-                `🏆 VINCITORE DEL TORNEO: @${winner}!`,
-                `${pts.toLocaleString()} punti — premio ${tourneyPrize}! Contatta lo streamer per riscuotere!`,
-                '',
-                true,
-                8000
-            );
             playWinnerJingle();
-            isSpeakingAnnouncement = true;
-            speakVoiceWithLang(
-                `Il torneo è finito! Il vincitore è ${winner} con ${pts} punti! ` +
-                `Hai vinto ${tourneyPrize}! Contatta lo streamer per riscuotere il premio!`,
-                'it-IT',
-                () => { isSpeakingAnnouncement = false; }
-            );
+            if (tourneyPrizeParam) {
+                // Premio fisso da ?prize= : annuncio diretto, niente ruota.
+                showCelebrationBanner(
+                    `🏆 VINCITORE DEL TORNEO: @${winner}!`,
+                    `${pts.toLocaleString()} punti — premio ${tourneyPrizeParam}! Contatta lo streamer per riscuotere!`,
+                    '',
+                    true,
+                    8000
+                );
+                isSpeakingAnnouncement = true;
+                speakVoiceWithLang(
+                    `Il torneo è finito! Il vincitore è ${winner} con ${pts} punti! ` +
+                    `Hai vinto ${tourneyPrizeParam}! Contatta lo streamer per riscuotere il premio!`,
+                    'it-IT',
+                    () => { isSpeakingAnnouncement = false; }
+                );
+            } else {
+                // Estrazione con la Ruota della Fortuna dopo un attimo di
+                // celebrazione del vincitore.
+                showCelebrationBanner(
+                    `🏆 VINCITORE DEL TORNEO: @${winner}!`,
+                    `${pts.toLocaleString()} punti — ora estrae il premio alla Ruota!`,
+                    '',
+                    true,
+                    8000
+                );
+                setTimeout(() => spinPrizeWheel(winner, pts), 6500);
+            }
+        }
+
+        /* ================= RUOTA DELLA FORTUNA =================
+           Montepremi pesato verso i premi piccoli (costo medio ~9€/live):
+           5€ x3, 10€ x2, 15€, 20€, 3 mesi AndrObs. Si può cambiare con
+           ?prizes=5€,10€,... (lista separata da virgole). */
+        const PRIZE_COLORS = ['#f59e0b', '#dc2626', '#7c3aed', '#059669', '#facc15', '#be123c', '#9333ea', '#ea580c'];
+        const prizeSegments = (urlParams.get('prizes') || '5€,10€,15€,5€,3 MESI ANDROBS,10€,20€,5€')
+            .split(',').map(s => s.trim()).filter(Boolean);
+
+        function drawPrizeWheel() {
+            const cv = document.getElementById('prizeWheelCanvas');
+            const ctx = cv.getContext('2d');
+            const cx = cv.width / 2, cy = cv.height / 2, r = cx - 16;
+            const n = prizeSegments.length;
+            const step = (Math.PI * 2) / n;
+            ctx.clearRect(0, 0, cv.width, cv.height);
+            for (let i = 0; i < n; i++) {
+                const a0 = i * step, a1 = a0 + step;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, r, a0, a1);
+                ctx.closePath();
+                ctx.fillStyle = PRIZE_COLORS[i % PRIZE_COLORS.length];
+                ctx.fill();
+                ctx.strokeStyle = '#fef3c7';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                // Testo radiale lungo il raggio centrale dello spicchio
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(a0 + step / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+                ctx.lineWidth = 6;
+                ctx.font = '900 46px Outfit, sans-serif';
+                const label = prizeSegments[i];
+                ctx.strokeText(label, r - 30, 16);
+                ctx.fillText(label, r - 30, 16);
+                ctx.restore();
+            }
+            // Mozzo centrale
+            ctx.beginPath();
+            ctx.arc(cx, cy, 62, 0, Math.PI * 2);
+            ctx.fillStyle = '#1e0a2e';
+            ctx.fill();
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 7;
+            ctx.stroke();
+            ctx.font = '52px Outfit, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#facc15';
+            ctx.fillText('👑', cx, cy + 18);
+        }
+
+        function spinPrizeWheel(winner, pts) {
+            const overlay = document.getElementById('prizeWheel');
+            const canvas = document.getElementById('prizeWheelCanvas');
+            const n = prizeSegments.length;
+            const stepDeg = 360 / n;
+            drawPrizeWheel();
+            overlay.classList.add('active');
+            document.getElementById('wheelResult').textContent = '';
+            document.getElementById('wheelSub').textContent = `@${winner} estrae il premio!`;
+            playBumperChime(5, 1.4);
+
+            // Spicchio vincente casuale. Il puntatore è in alto (270°):
+            // ruotiamo di 6 giri + l'angolo che centra lo spicchio scelto
+            // sotto il puntatore, con jitter per sembrare naturale.
+            const winIdx = Math.floor(Math.random() * n);
+            const jitter = (Math.random() - 0.5) * stepDeg * 0.6;
+            const target = 360 * 6 + (270 - (winIdx * stepDeg + stepDeg / 2)) + jitter;
+            // Riavvio pulito della transizione ad ogni giro
+            canvas.style.transition = 'none';
+            canvas.style.transform = 'rotate(0deg)';
+            void canvas.offsetWidth;
+            canvas.style.transition = 'transform 6.2s cubic-bezier(0.12, 0.55, 0.06, 1)';
+            canvas.style.transform = `rotate(${target}deg)`;
+
+            setTimeout(() => {
+                const prize = prizeSegments[winIdx];
+                document.getElementById('wheelResult').textContent = `🏆 ${prize}!`;
+                playWinnerJingle();
+                stage.classList.add('shake-active');
+                setTimeout(() => stage.classList.remove('shake-active'), 1500);
+                showCelebrationBanner(
+                    `🎡 @${winner} VINCE ${prize}!`,
+                    'Scrivi in DM su Instagram o TikTok allo streamer per riscuotere!',
+                    '',
+                    true,
+                    9000
+                );
+                isSpeakingAnnouncement = true;
+                speakVoiceWithLang(
+                    `La ruota ha parlato! ${winner} vince ${prize.replace('€', ' euro')}! ` +
+                    `Scrivigli in DM su Instagram o TikTok per riscuotere il premio!`,
+                    'it-IT',
+                    () => { isSpeakingAnnouncement = false; }
+                );
+                // La ruota resta visibile ~14s col risultato, poi svanisce.
+                setTimeout(() => overlay.classList.remove('active'), 14000);
+            }, 6500);
         }
 
         async function pollTikTokEvents() {

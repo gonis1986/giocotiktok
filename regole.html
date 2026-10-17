@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 Regole del Torneo — Quantum Pinball Reactor</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Outfit', sans-serif;
+        min-height: 100vh;
+        background:
+            radial-gradient(ellipse 90% 60% at 50% -10%, rgba(254, 44, 85, 0.35), transparent 60%),
+            radial-gradient(ellipse 70% 50% at 90% 100%, rgba(124, 58, 237, 0.3), transparent 60%),
+            linear-gradient(160deg, #1e0a2e 0%, #2d0a1e 50%, #1a0512 100%);
+        color: #ffe9c9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 28px 16px 60px;
+    }
+    .crown { font-size: 72px; filter: drop-shadow(0 0 30px rgba(250,204,21,0.8)); animation: bob 3s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+    h1 {
+        font-size: clamp(30px, 6vw, 52px);
+        font-weight: 900;
+        text-align: center;
+        background: linear-gradient(90deg, #fef08a, #f59e0b, #fe2c55, #f59e0b, #fef08a);
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: shimmer 6s linear infinite;
+        margin: 10px 0 4px;
+    }
+    @keyframes shimmer { to { background-position: 300% 0; } }
+    .sub { font-size: clamp(15px, 2.6vw, 20px); font-weight: 700; color: #f9c8d0; text-align: center; margin-bottom: 26px; }
+    .card {
+        width: min(680px, 100%);
+        background: rgba(40, 8, 30, 0.82);
+        border: 2px solid rgba(250, 204, 21, 0.45);
+        border-radius: 22px;
+        padding: 26px 26px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.55), inset 0 0 40px rgba(250,204,21,0.05);
+        backdrop-filter: blur(6px);
+    }
+    .card h2 {
+        font-size: 22px; font-weight: 900; color: #facc15;
+        margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+    }
+    .card p, .card li { font-size: 16.5px; line-height: 1.65; color: #ffe9d5; }
+    .card ul { list-style: none; }
+    .card li { padding: 7px 0 7px 30px; position: relative; }
+    .card li::before { content: '✦'; position: absolute; left: 4px; color: #facc15; }
+    .card b, .card strong { color: #fbbf24; }
+    .card .rose { color: #fb7185; font-weight: 800; }
+    .countdown-wrap {
+        text-align: center; margin-bottom: 22px;
+    }
+    .countdown-label { font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: #f9c8d0; margin-bottom: 10px; }
+    .countdown {
+        display: inline-flex; gap: 12px; align-items: baseline;
+        font-variant-numeric: tabular-nums;
+    }
+    .cd-cell {
+        background: linear-gradient(180deg, rgba(250,204,21,0.18), rgba(120,20,40,0.5));
+        border: 2px solid rgba(250,204,21,0.6); border-radius: 14px;
+        padding: 10px 14px; min-width: 74px;
+        box-shadow: 0 0 22px rgba(250,204,21,0.25);
+    }
+    .cd-num { font-size: 36px; font-weight: 900; color: #facc15; display: block; }
+    .cd-lbl { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #f9c8d0; text-transform: uppercase; }
+    .prizes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .prize-chip {
+        font-weight: 900; font-size: 19px; padding: 9px 18px; border-radius: 999px;
+        border: 2px solid rgba(250,204,21,0.7); color: #fef08a;
+        background: linear-gradient(135deg, rgba(120,20,40,0.9), rgba(80,10,60,0.9));
+        box-shadow: 0 0 16px rgba(250,204,21,0.3);
+    }
+    .prize-chip.pro { color: #a5f3fc; border-color: rgba(165,243,252,0.7); }
+    .foot { margin-top: 8px; font-size: 13px; color: #b98a92; text-align: center; max-width: 680px; line-height: 1.6; }
+    .cta {
+        display: inline-block; margin-top: 20px; padding: 16px 42px;
+        font-size: 21px; font-weight: 900; color: #1a0512; text-decoration: none;
+        background: linear-gradient(90deg, #facc15, #f59e0b); border-radius: 999px;
+        box-shadow: 0 0 34px rgba(250,204,21,0.6); letter-spacing: 0.5px;
+        transition: transform 0.15s;
+    }
+    .cta:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<div class="crown">👑</div>
+<h1>TORNEO QUANTUM PINBALL REACTOR</h1>
+<div class="sub">Il gioco del Re della Live — ogni <b>domenica alle ore 20:00</b>, in diretta su TikTok</div>
+
+<div class="countdown-wrap">
+    <div class="countdown-label">⏳ PROSSIMO TORNEO TRA</div>
+    <div class="countdown">
+        <div class="cd-cell"><span class="cd-num" id="cdD">–</span><span class="cd-lbl">giorni</span></div>
+        <div class="cd-cell"><span class="cd-num" id="cdH">–</span><span class="cd-lbl">ore</span></div>
+        <div class="cd-cell"><span class="cd-num" id="cdM">–</span><span class="cd-lbl">min</span></div>
+        <div class="cd-cell"><span class="cd-num" id="cdS">–</span><span class="cd-lbl">sec</span></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>🎮 Come si gioca</h2>
+    <ul>
+        <li>Il torneo dura <b>30 minuti</b>: chi è <b>primo in classifica allo scadere</b> vince.</li>
+        <li><b>TAP TAP sui like</b> = punti <b>gratis</b>. Più tappi, più sali — si vince anche senza spendere niente.</li>
+        <li><b>Scrivi in chat</b> = punti extra.</li>
+        <li><span class="rose">🌹 Rose e regali = SORPASSO immediato</span>: chi dona guadagna tanti punti in un colpo e può superare tutti. È il vantaggio di chi sostiene la live.</li>
+        <li>Ogni domenica la classifica riparte da zero: tutti possono vincere.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <h2>🎡 Il premio</h2>
+    <p>Il premio è una <b>donazione offerta da AndrObs</b> e viene estratto dal vincitore con la <b>Ruota della Fortuna</b> a fine torneo. In palio:</p>
+    <div class="prizes">
+        <span class="prize-chip">5€</span>
+        <span class="prize-chip">10€</span>
+        <span class="prize-chip">15€</span>
+        <span class="prize-chip">20€</span>
+        <span class="prize-chip pro">3 MESI AndrObs PRO</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2>💬 Come si ritira</h2>
+    <ul>
+        <li>Scrivi in <b>DM su Instagram o TikTok</b> allo streamer per riscuotere il premio.</li>
+        <li>Per riceverlo devi <b>registrare un video mentre usi la piattaforma AndrObs</b> e pubblicarlo sui tuoi social <b>taggando AndrObs</b>.</li>
+        <li>Poi <b>manda il video allo streamer</b>: verrà caricato sul <b>canale YouTube ufficiale di AndrObs</b>.</li>
+        <li>Il premio viene consegnato <b>dopo</b> la verifica del video pubblicato.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <h2>⚖️ Fair play</h2>
+    <ul>
+        <li>Un solo vincitore a settimana; niente bot, niente account multipli — a chi bara niente premio.</li>
+        <li>La decisione dello streamer sul vincitore e sull'estrazione è definitiva.</li>
+        <li>I premi non sono convertibili in altro né cedibili.</li>
+    </ul>
+</div>
+
+<a class="cta" href="https://www.tiktok.com" target="_blank" rel="noopener">🔴 ENTRA NELLA LIVE</a>
+
+<div class="foot">
+    Torneo organizzato e sponsorizzato da AndrObs — www.androbs.com<br>
+    Il montepremi è una donazione dello streamer; la partecipazione ai like e alla chat è gratuita.
+</div>
+
+<script>
+    // Countdown alla prossima domenica ore 20:00 (ora locale del visitatore)
+    function nextSunday20() {
+        const now = new Date();
+        const d = new Date(now);
+        d.setHours(20, 0, 0, 0);
+        let add = (7 - d.getDay()) % 7;          // 0 = domenica
+        if (add === 0 && d <= now) add = 7;      // oggi è domenica ma già passata
+        d.setDate(d.getDate() + add);
+        return d;
+    }
+    function tick() {
+        const diff = nextSunday20() - new Date();
+        const s = Math.max(0, Math.floor(diff / 1000));
+        const dd = Math.floor(s / 86400);
+        document.getElementById('cdD').textContent = dd;
+        document.getElementById('cdD').nextElementSibling.textContent = dd === 1 ? 'giorno' : 'giorni';
+        document.getElementById('cdH').textContent = String(Math.floor(s / 3600) % 24).padStart(2, '0');
+        document.getElementById('cdM').textContent = String(Math.floor(s / 60) % 60).padStart(2, '0');
+        document.getElementById('cdS').textContent = String(s % 60).padStart(2, '0');
+    }
+    tick();
+    setInterval(tick, 1000);
+</script>
+</body>
+</html>
